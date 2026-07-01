@@ -1,0 +1,6 @@
+[default]
+description = "Allows set_mosaic and get_mosaic (Android system UI presentation)."
+permissions = [
+  "allow-set-mosaic",
+  "allow-get-mosaic",
+]

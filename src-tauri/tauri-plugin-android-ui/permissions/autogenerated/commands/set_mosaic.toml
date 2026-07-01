@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-set-mosaic"
+description = "Enables the set_mosaic command without any pre-configured scope."
+commands.allow = ["set_mosaic"]
+
+[[permission]]
+identifier = "deny-set-mosaic"
+description = "Denies the set_mosaic command without any pre-configured scope."
+commands.deny = ["set_mosaic"]

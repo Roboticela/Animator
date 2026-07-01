@@ -1,0 +1,5 @@
+{
+  "lockVersion": 1,
+  "template": "vite-express-tauri",
+  "components": {}
+}

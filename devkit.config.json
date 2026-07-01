@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Roboticela/DevKit/main/cli/schemas/devkit-config.json",
+  "devkit": "1.0",
+  "template": "vite-express-tauri",
+  "site": {
+    "name": "Animator",
+    "url": "https://animator.roboticela.com"
+  },
+  "theme": {
+    "preset": "default",
+    "colors": {
+      "primary": "#6366f1",
+      "secondary": "#f59e0b"
+    },
+    "fonts": {
+      "sans": "Inter",
+      "mono": "JetBrains Mono",
+      "display": "Inter"
+    },
+    "radius": "md",
+    "darkMode": true,
+    "darkModeStrategy": "class"
+  }
+}
