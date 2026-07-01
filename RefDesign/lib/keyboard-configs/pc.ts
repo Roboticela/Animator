@@ -1,0 +1,128 @@
+import type { KeyboardButtonConfig } from '../keyboard-button-types';
+
+/**
+ * Keyboard button configuration for PC (Full-size Windows keyboard)
+ */
+export const pcConfig: KeyboardButtonConfig = [
+  // Top row - Function keys
+  { id: 'esc', primary: 'Escape', secondary: '', fn: '' },
+  { id: 'f1', primary: 'F1', secondary: '', fn: '' },
+  { id: 'f2', primary: 'F2', secondary: '', fn: '' },
+  { id: 'f3', primary: 'F3', secondary: '', fn: '' },
+  { id: 'f4', primary: 'F4', secondary: '', fn: '' },
+  { id: 'f5', primary: 'F5', secondary: '', fn: '' },
+  { id: 'f6', primary: 'F6', secondary: '', fn: '' },
+  { id: 'f7', primary: 'F7', secondary: '', fn: '' },
+  { id: 'f8', primary: 'F8', secondary: '', fn: '' },
+  { id: 'f9', primary: 'F9', secondary: '', fn: '' },
+  { id: 'f10', primary: 'F10', secondary: '', fn: '' },
+  { id: 'f11', primary: 'F11', secondary: '', fn: '' },
+  { id: 'f12', primary: 'F12', secondary: '', fn: '' },
+
+  // Lock keys row
+  { id: 'prtsc', primary: 'PrintScreen', secondary: '', fn: '' },
+  { id: 'scroll-lock', primary: 'ScrollLock', secondary: '', fn: '' },
+  { id: 'pause-break', primary: 'Pause', secondary: '', fn: '' },
+
+  // Number row
+  { id: 'backtick', primary: '`', secondary: '~', fn: '' },
+  { id: '1', primary: '1', secondary: '!', fn: '' },
+  { id: '2', primary: '2', secondary: '@', fn: '' },
+  { id: '3', primary: '3', secondary: '#', fn: '' },
+  { id: '4', primary: '4', secondary: '$', fn: '' },
+  { id: '5', primary: '5', secondary: '%', fn: '' },
+  { id: '6', primary: '6', secondary: '^', fn: '' },
+  { id: '7', primary: '7', secondary: '&', fn: '' },
+  { id: '8', primary: '8', secondary: '*', fn: '' },
+  { id: '9', primary: '9', secondary: '(', fn: '' },
+  { id: '0', primary: '0', secondary: ')', fn: '' },
+  { id: 'minus', primary: '-', secondary: '_', fn: '' },
+  { id: 'equals', primary: '=', secondary: '+', fn: '' },
+  { id: 'backspace', primary: 'Backspace', secondary: '', fn: '' },
+
+  // QWERTY row
+  { id: 'tab', primary: 'Tab', secondary: '', fn: '' },
+  { id: 'q', primary: 'q', secondary: 'Q', fn: '' },
+  { id: 'w', primary: 'w', secondary: 'W', fn: '' },
+  { id: 'e', primary: 'e', secondary: 'E', fn: '' },
+  { id: 'r', primary: 'r', secondary: 'R', fn: '' },
+  { id: 't', primary: 't', secondary: 'T', fn: '' },
+  { id: 'y', primary: 'y', secondary: 'Y', fn: '' },
+  { id: 'u', primary: 'u', secondary: 'U', fn: '' },
+  { id: 'i', primary: 'i', secondary: 'I', fn: '' },
+  { id: 'o', primary: 'o', secondary: 'O', fn: '' },
+  { id: 'p', primary: 'p', secondary: 'P', fn: '' },
+  { id: 'bracket-left', primary: '[', secondary: '{', fn: '' },
+  { id: 'bracket-right', primary: ']', secondary: '}', fn: '' },
+
+  // ASDF row
+  { id: 'capslock', primary: 'CapsLock', secondary: '', fn: '' },
+  { id: 'a', primary: 'a', secondary: 'A', fn: '' },
+  { id: 's', primary: 's', secondary: 'S', fn: '' },
+  { id: 'd', primary: 'd', secondary: 'D', fn: '' },
+  { id: 'f', primary: 'f', secondary: 'F', fn: '' },
+  { id: 'g', primary: 'g', secondary: 'G', fn: '' },
+  { id: 'h', primary: 'h', secondary: 'H', fn: '' },
+  { id: 'j', primary: 'j', secondary: 'J', fn: '' },
+  { id: 'k', primary: 'k', secondary: 'K', fn: '' },
+  { id: 'l', primary: 'l', secondary: 'L', fn: '' },
+  { id: 'semicolon', primary: ';', secondary: ':', fn: '' },
+  { id: 'quote', primary: "'", secondary: '"', fn: '' },
+  { id: 'backslash', primary: '\\', secondary: '|', fn: '' },
+  { id: 'enter', primary: 'Enter', secondary: '', fn: '' },
+
+  // ZXCV row
+  { id: 'shift-left', primary: 'Shift', secondary: '', fn: '' },
+  { id: 'z', primary: 'z', secondary: 'Z', fn: '' },
+  { id: 'x', primary: 'x', secondary: 'X', fn: '' },
+  { id: 'c', primary: 'c', secondary: 'C', fn: '' },
+  { id: 'v', primary: 'v', secondary: 'V', fn: '' },
+  { id: 'b', primary: 'b', secondary: 'B', fn: '' },
+  { id: 'n', primary: 'n', secondary: 'N', fn: '' },
+  { id: 'm', primary: 'm', secondary: 'M', fn: '' },
+  { id: 'comma', primary: ',', secondary: '<', fn: '' },
+  { id: 'period', primary: '.', secondary: '>', fn: '' },
+  { id: 'slash', primary: '/', secondary: '?', fn: '' },
+  { id: 'shift-right', primary: 'Shift', secondary: '', fn: '' },
+
+  // Bottom modifier row
+  { id: 'ctrl-left', primary: 'Control', secondary: '', fn: '' },
+  { id: 'windows-left', primary: 'Meta', secondary: '', fn: '' },
+  { id: 'alt-left', primary: 'Alt', secondary: '', fn: '' },
+  { id: 'space', primary: ' ', secondary: '', fn: '' },
+  { id: 'alt-right', primary: 'Alt', secondary: '', fn: '' },
+  { id: 'windows-right', primary: 'Meta', secondary: '', fn: '' },
+  { id: 'menu', primary: 'ContextMenu', secondary: '', fn: '' },
+  { id: 'ctrl-right', primary: 'Control', secondary: '', fn: '' },
+
+  // Navigation cluster
+  { id: 'insert', primary: 'Insert', secondary: '', fn: '' },
+  { id: 'home', primary: 'Home', secondary: '', fn: '' },
+  { id: 'pgup', primary: 'PageUp', secondary: '', fn: '' },
+  { id: 'delete', primary: 'Delete', secondary: '', fn: '' },
+  { id: 'end', primary: 'End', secondary: '', fn: '' },
+  { id: 'pgdn', primary: 'PageDown', secondary: '', fn: '' },
+  { id: 'arrow-up', primary: 'ArrowUp', secondary: '', fn: '' },
+  { id: 'arrow-left', primary: 'ArrowLeft', secondary: '', fn: '' },
+  { id: 'arrow-down', primary: 'ArrowDown', secondary: '', fn: '' },
+  { id: 'arrow-right', primary: 'ArrowRight', secondary: '', fn: '' },
+
+  // Numpad
+  { id: 'numlock', primary: 'NumLock', secondary: '', fn: '' },
+  { id: 'num-slash', primary: '/', secondary: '', fn: '' },
+  { id: 'num-multiply', primary: '*', secondary: '', fn: '' },
+  { id: 'num-minus', primary: '-', secondary: '', fn: '' },
+  { id: 'num7', primary: '7', secondary: 'Home', fn: '' },
+  { id: 'num8', primary: '8', secondary: 'ArrowUp', fn: '' },
+  { id: 'num9', primary: '9', secondary: 'PageUp', fn: '' },
+  { id: 'num-plus', primary: '+', secondary: '', fn: '' },
+  { id: 'num4', primary: '4', secondary: 'ArrowLeft', fn: '' },
+  { id: 'num5', primary: '5', secondary: '', fn: '' },
+  { id: 'num6', primary: '6', secondary: 'ArrowRight', fn: '' },
+  { id: 'num1', primary: '1', secondary: 'End', fn: '' },
+  { id: 'num2', primary: '2', secondary: 'ArrowDown', fn: '' },
+  { id: 'num3', primary: '3', secondary: 'PageDown', fn: '' },
+  { id: 'num0', primary: '0', secondary: 'Insert', fn: '' },
+  { id: 'num-period', primary: '.', secondary: 'Delete', fn: '' },
+  { id: 'num-enter', primary: 'Enter', secondary: '', fn: '' },
+];

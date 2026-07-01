@@ -1,0 +1,371 @@
+.HP-EliteBook-820-G4-colors {
+    /* Theme-aware color variables with fallbacks */
+    --bg-primary: var(--card, #909193);
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, black));
+    --text-color: var(--foreground, white);
+    --shadow-color: var(--border, black);
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+
+.HP-EliteBook-820-G4-colors .keyboard {
+    font-size: 16px;
+    width: 75.125em;
+    border: 0.125em solid var(--bg-secondary);
+    padding: 1em;
+    border-radius: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    background-color: var(--bg-primary);
+    /* for nub */
+    position: relative;
+}
+
+.HP-EliteBook-820-G4-colors .nub {
+    width: 3em;
+    height: 3em;
+    border-radius: 50%;
+    background-color: var(--bg-secondary);
+    border: 0.4em solid var(--bg-primary);
+    position: absolute;
+    top: 58%;
+    left: 44.65%;
+    z-index: 10;
+}
+
+.HP-EliteBook-820-G4-colors .row {
+    display: flex;
+    gap: 11px;
+}
+
+.HP-EliteBook-820-G4-colors .enter-key-rows-outer {
+    display: flex;
+    gap: 8px;
+}
+
+.HP-EliteBook-820-G4-colors .enter-key-rows-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.HP-EliteBook-820-G4-colors .row-3,
+.HP-EliteBook-820-G4-colors .row-4 {
+    gap: 8px !important;
+}
+
+.HP-EliteBook-820-G4-colors .arrow-keys {
+    display: flex;
+    gap: 14px;
+}
+
+.HP-EliteBook-820-G4-colors button {
+    font-size: 1.3em;
+    width: 3.5em;
+    height: 3.5em;
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border: none;
+    border-radius: 0.3em;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2em;
+    box-shadow: 0px 0px 0.3em var(--shadow-color);
+}
+
+.HP-EliteBook-820-G4-colors .primary-keys {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.5em 0.4em 0.2em;
+}
+
+.HP-EliteBook-820-G4-colors .secondary-keys {
+    display: flex;
+}
+
+.HP-EliteBook-820-G4-colors .fn-key {
+    font-size: 0.5em;
+    align-self: flex-start;
+    border: 0.05em solid var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 16px;
+    min-height: 16px;
+    aspect-ratio: 1/1;
+    padding: 0.2em;
+    border-radius: 0.4em;
+}
+
+.HP-EliteBook-820-G4-colors .altgr-key {
+    padding: 1em;
+    padding: 0.5em 0.4em 0.2em;
+    align-self: flex-end;
+}
+
+.HP-EliteBook-820-G4-colors .backspace-key .key,
+.HP-EliteBook-820-G4-colors .tab-key .key,
+.HP-EliteBook-820-G4-colors .capslock-key .key,
+.HP-EliteBook-820-G4-colors .ctrl-left-key .key,
+.HP-EliteBook-820-G4-colors .alt-left-key .key,
+.HP-EliteBook-820-G4-colors .alt-right-key .key,
+.HP-EliteBook-820-G4-colors .ctrl-right-key .key {
+    font-size: 0.7em;
+}
+
+.HP-EliteBook-820-G4-colors .backspace-key {
+    width: 5.6em;
+    align-items: stretch;
+}
+
+.HP-EliteBook-820-G4-colors .backspace-key .key {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5em;
+}
+
+.HP-EliteBook-820-G4-colors .tab-key {
+    width: 5.5em;
+}
+
+.HP-EliteBook-820-G4-colors .tab-key .primary-keys {
+    width: 100%;
+}
+
+.HP-EliteBook-820-G4-colors .tab-key .key {
+    display: flex;
+    justify-content: space-between;
+}
+
+.HP-EliteBook-820-G4-colors .tab-key .icon-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.HP-EliteBook-820-G4-colors .capslock-key {
+    width: 6.56em;
+    /* for light */
+    position: relative;
+}
+
+.HP-EliteBook-820-G4-colors .capslock-key .light {
+    top: 32%;
+}
+
+.HP-EliteBook-820-G4-colors .enter-key {
+    position: relative;
+    right: 1em;
+    height: 100%;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 30% 100%, 30% 47%, 0 47%);
+}
+
+.HP-EliteBook-820-G4-colors .bump-key .key-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.HP-EliteBook-820-G4-colors .shift-left-key,
+.HP-EliteBook-820-G4-colors .ctrl-left-key {
+    width: 4.5em;
+}
+
+.HP-EliteBook-820-G4-colors .shift-right-key {
+    width: 8.5em;
+}
+
+.HP-EliteBook-820-G4-colors .fn-source-key .secondary-keys {
+    padding: 0.5em 0.4em;
+}
+
+.HP-EliteBook-820-G4-colors .space-key {
+    width: 19.1em;
+}
+
+.HP-EliteBook-820-G4-colors .arrow-keys button {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.HP-EliteBook-820-G4-colors .arrow-keys .fn-key {
+    position: absolute;
+    top: 0.2em;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+.HP-EliteBook-820-G4-colors .up-down-keys {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
+}
+
+.HP-EliteBook-820-G4-colors .up-down-keys button {
+    height: 1.75em;
+    width: 4.6em;
+    padding: 0;
+    align-items: flex-end;
+}
+
+.HP-EliteBook-820-G4-colors .up-down-keys .primary-keys {
+    padding: 0;
+}
+
+.HP-EliteBook-820-G4-colors .light-key {
+    position: relative;
+}
+
+.HP-EliteBook-820-G4-colors .light {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--bg-primary);
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+
+}
+
+.HP-EliteBook-820-G4-colors .svg {
+    width: 15px;
+    aspect-ratio: 1/1;
+    /* background-color: red; */
+}
+
+.HP-EliteBook-820-G4-colors .svg svg {
+    width: 100%;
+}
+
+.HP-EliteBook-820-G4-colors .custom-icon-outer {
+    width: 32px;
+}
+
+.HP-EliteBook-820-G4-colors .backspace-key .icon-outer {
+    width: 1.5em;
+}
+
+.HP-EliteBook-820-G4-colors .tab-key .icon-outer {
+    width: 1.3em;
+}
+
+.HP-EliteBook-820-G4-colors .enter-key .icon-outer {
+    width: 1.8em;
+}
+
+.HP-EliteBook-820-G4-colors .shift-left-key .icon-outer,
+.HP-EliteBook-820-G4-colors .shift-right-key .icon-outer {
+    width: 1.1em;
+}
+
+.HP-EliteBook-820-G4-colors .windows-key .icon-outer {
+    width: 1.3em;
+}
+
+.HP-EliteBook-820-G4-colors .arrow-keys .icon-outer {
+    width: 0.8em;
+}
+
+.HP-EliteBook-820-G4-colors .esc-key {
+    border-top-left-radius: 1.2em;
+}
+
+.HP-EliteBook-820-G4-colors .delete-key {
+    border-top-right-radius: 1.2em;
+}
+
+.HP-EliteBook-820-G4-colors .ctrl-left-key {
+    border-bottom-left-radius: 1em;
+}
+
+.HP-EliteBook-820-G4-colors .arrow-right-key {
+    border-bottom-right-radius: 1em;
+}
+
+.HP-EliteBook-820-G4-colors .row-1 {
+    justify-content: space-between;
+}
+
+.HP-EliteBook-820-G4-colors .row-1 button {
+    width: 3.2em;
+    height: 2em;
+    justify-content: flex-start;
+    gap: 0.3em;
+}
+
+.HP-EliteBook-820-G4-colors .row-1 .primary-keys {
+    padding: 0;
+}
+
+.HP-EliteBook-820-G4-colors .row-1 .key {
+    font-size: 0.7em;
+}
+
+.HP-EliteBook-820-G4-colors .num-sub {
+    font-size: 0.8em;
+    position: relative;
+    top: 0.3em;
+}
+
+.HP-EliteBook-820-G4-colors .f-12-key .fn-key,
+.HP-EliteBook-820-G4-colors .insert-key .fn-key,
+.HP-EliteBook-820-G4-colors .shift-right-key .fn-key,
+.HP-EliteBook-820-G4-colors .arrow-keys .fn-key {
+    padding: 0;
+    aspect-ratio: 0;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.HP-EliteBook-820-G4-colors .row-1 .f-12-key {
+    gap: 0;
+}
+
+.HP-EliteBook-820-G4-colors button.insert-key {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.HP-EliteBook-820-G4-colors .shift-right-key .fn-key {
+    align-self: flex-start;
+}
+
+/* Utility Classes */
+.HP-EliteBook-820-G4-colors button.place-center {
+    justify-content: center;
+    align-items: center;
+}
+
+.HP-EliteBook-820-G4-colors .border-none {
+    border: none;
+}
+
+.HP-EliteBook-820-G4-colors .icon-center {
+    position: relative;
+}
+
+.HP-EliteBook-820-G4-colors .icon-center .fn-key {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.HP-EliteBook-820-G4-colors .custom-icon {
+    width: 3em;
+}
+
+.HP-EliteBook-820-G4-colors .align-symbol {
+    padding: 0.3em 0.4em 0.2em;
+}

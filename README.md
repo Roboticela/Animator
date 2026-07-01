@@ -41,7 +41,27 @@
 
 ## 🌟 About
 
-**Vite-Express-Tauri-Template-DevKit** (Roboticela DevKit) is a production-ready starter for building cross-platform applications with a **React + TypeScript** frontend (Vite), an **Express** backend API, and **Tauri 2** for desktop (Linux, Windows, macOS) and mobile (Android; iOS coming soon). It includes a **GitHub Actions** workflow for building and releasing installers and packages across platforms, plus scripts for **icon generation** (desktop, Android, web).
+**Animator** is a client-side 3D model animation studio built on the Roboticela DevKit stack. Import rigged models (GLB, GLTF, FBX, OBJ), inspect armatures and bones, preview embedded clips, apply procedural premade humanoid animations, hand-author custom keyframe clips with a bone gizmo + timeline, and export the result as a new **`.glb`** file — in the browser or inside the Tauri desktop shell.
+
+### Animator at a glance
+
+| Capability | Details |
+|------------|---------|
+| **Import** | Drag-and-drop or file picker; native open dialog on desktop (Tauri) |
+| **Inspection** | Armature/bone tree, mesh stats, per-bone transform readout |
+| **Embedded clips** | Plays animations baked into the imported file |
+| **Premade clips** | Procedural idle, walk, run, wave, jump, spin, dance (bone-name heuristics) |
+| **Custom authoring** | Move/rotate/scale gizmo, per-bone keyframes, timeline scrub/play, undo/redo |
+| **Export** | GLB only (native Save dialog on desktop; download in browser) |
+| **Try without a file** | Built-in procedural sample humanoid rig |
+
+**Keyboard shortcuts:** `W` / `E` / `R` — gizmo mode · `Space` — play/pause · `Esc` — deselect bone · `Ctrl+Z` / `Ctrl+Y` — undo/redo
+
+**Known limitations:** FBX import is best-effort (three-stdlib). Export is always `.glb`. Premade animations match common humanoid bone naming (Mixamo/Unity/VRM style); unusual rigs may animate partially.
+
+---
+
+**Vite-Express-Tauri-Template-DevKit** (Roboticela DevKit) is the underlying production-ready starter for building cross-platform applications with a **React + TypeScript** frontend (Vite), an **Express** backend API, and **Tauri 2** for desktop (Linux, Windows, macOS) and mobile (Android; iOS coming soon). It includes a **GitHub Actions** workflow for building and releasing installers and packages across platforms, plus scripts for **icon generation** (desktop, Android, web).
 
 ### Why This Template?
 
@@ -84,8 +104,9 @@
 
 | Layer        | Technology |
 |-------------|------------|
-| Frontend    | React 19, TypeScript 5.x, Vite 7, TailwindCSS 4, React Router 7 |
-| Backend     | Express 5 (Node.js) |
+| Frontend    | React 19, TypeScript 5.x, Vite 7, TailwindCSS 4 |
+| 3D / Animator | three.js, React Three Fiber, drei, zustand |
+| Backend     | Express 5 (Node.js) — optional; Animator is fully client-side |
 | Desktop/Mobile | Tauri 2, Rust |
 | Tooling     | ESLint, npm |
 
@@ -385,10 +406,22 @@ Vite-Express-Tauri-Template-DevKit/
 │   │   └── index.ts
 │   ├── package.json
 │   └── tsconfig.json
-├── src/                         # React frontend
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── ...
+├── src/                         # React frontend (Animator app)
+│   ├── App.tsx                  # Import screen → AppShell when model loaded
+│   ├── components/
+│   │   ├── import/              # ImportDropzone landing
+│   │   ├── layout/              # AppHeader, AppShell
+│   │   ├── modals/              # About, Guide, Export
+│   │   ├── panels/              # Bone tree, scene info, animation library, transform
+│   │   ├── timeline/            # Keyframe editor + transport controls
+│   │   ├── viewport/            # R3F canvas, gizmo, skeleton overlay
+│   │   └── ui/                  # Button, Panel, Modal, Tabs, NumberInput
+│   ├── contexts/                # ThemeContext (dark/light)
+│   ├── hooks/                   # useOpenModel
+│   ├── lib/                     # loaders, clip-builder, procedural anims, export, tauri
+│   ├── store/                   # modelStore, animationStore (zustand)
+│   └── types/                   # ModelData, ClipMeta, keyframe types
+├── RefDesign/                   # UI reference only (not bundled)
 ├── src-tauri/                   # Tauri + Rust
 │   ├── src/
 │   │   ├── main.rs

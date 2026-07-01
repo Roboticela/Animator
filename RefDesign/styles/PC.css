@@ -1,0 +1,293 @@
+.PC-colors {
+    --bg-primary: var(--card, rgb(59, 59, 59));
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, black));
+    --text-color: var(--foreground, white);
+    --text-secondary: var(--muted-foreground, #aaa);
+    --key-gap: 7px;
+    --row-gap: 7px;
+    --section-gap: 20px;
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+    max-width: fit-content;
+}
+
+.PC-colors .keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-gap);
+    width: 1530px;
+    padding: 20px;
+    border: 2px solid var(--bg-secondary);
+    border-radius: 10px;
+    background-color: var(--bg-primary);
+    color: var(--text-color);
+}
+
+.PC-colors .keyboard svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Top section */
+.PC-colors .keyboard .keyboard-top {
+    display: flex;
+    align-items: center;
+    gap: 88px;
+}
+
+.PC-colors .keyboard .function-key-row .key:nth-child(1),
+.PC-colors .keyboard .function-key-row .key:nth-child(5),
+.PC-colors .keyboard .function-key-row .key:nth-child(9) {
+    margin-right: var(--section-gap);
+}
+
+/* Bottom section */
+.PC-colors .keyboard .keyboard-bottom {
+    display: flex;
+    gap: var(--section-gap);
+}
+
+.PC-colors .keyboard .keyboard-main,
+.PC-colors .keyboard .keyboard-nav,
+.PC-colors .keyboard .keyboard-numpad {
+    display: flex;
+    flex-direction: column;
+    gap: var(--row-gap);
+}
+
+.PC-colors .keyboard .keyboard-nav {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.PC-colors .keyboard .arrow-keys {
+    align-items: center;
+}
+
+.PC-colors .keyboard .row {
+    display: flex;
+    gap: var(--key-gap);
+}
+
+.PC-colors .keyboard .rows-key-group {
+    display: flex;
+    gap: var(--key-gap);
+    position: relative;
+}
+
+.PC-colors .keyboard .rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--row-gap);
+}
+
+/* Key base style */
+.PC-colors .keyboard .key {
+    font-size: 18px;
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border: none;
+    border-radius: 8px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: filter 0.1s ease;
+}
+
+.PC-colors .keyboard .key:hover {
+    filter: brightness(1.3);
+}
+
+.PC-colors .keyboard .key:active,
+.PC-colors .keyboard .key.active {
+    filter: brightness(0.7);
+}
+
+/* Indicators */
+.PC-colors .keyboard .indicators {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-left: -23px;
+}
+
+.PC-colors .keyboard .indicator {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.PC-colors .keyboard .indicator-light {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--bg-primary);
+    box-shadow: inset 0px 0px 5px var(--bg-secondary);
+    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.PC-colors .keyboard .indicator-icon {
+    color: var(--text-color);
+    width: 20px;
+    height: 20px;
+}
+
+.PC-colors .keyboard .indicator-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Modifier styling */
+.PC-colors .keyboard .multi-line {
+    display: flex;
+    flex-direction: column;
+}
+
+.PC-colors .keyboard .key-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.PC-colors .keyboard .arrow-up-icon {
+    transform: rotate(90deg);
+}
+
+.PC-colors .keyboard .arrow-down-icon {
+    transform: rotate(-90deg);
+}
+
+.PC-colors .keyboard .arrow-right-icon {
+    transform: rotate(180deg);
+}
+
+/* Special key widths */
+.PC-colors .keyboard .key-backspace {
+    width: 120px;
+}
+
+.PC-colors .keyboard .key-backspace .key-icon {
+    margin-right: 20px;
+}
+
+.PC-colors .keyboard .key-tab {
+    width: 90px;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.PC-colors .keyboard .key-tab .key-icon {
+    flex-direction: column;
+}
+
+.PC-colors .keyboard .key-capslock {
+    width: 110px;
+}
+
+.PC-colors .keyboard .key-enter {
+    width: 90px;
+    clip-path: polygon(-20% -20%, 120% -20%, 120% 120%, 22% 120%, 22% 47%, -20% 47%);
+    position: absolute;
+    right: 0;
+    padding-top: 20px;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.PC-colors .keyboard .shift-left {
+    width: 150px;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.PC-colors .keyboard .shift-right {
+    width: 164px;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.PC-colors .keyboard .key-space {
+    width: 368px;
+}
+
+.PC-colors .keyboard .row-key .key {
+    height: 100%;
+}
+
+/* Numpad tall keys */
+.PC-colors .keyboard .key-large {
+    width: 127px;
+}
+
+/* Utility classes */
+.PC-colors .keyboard .key-medium {
+    width: 82px;
+}
+
+.PC-colors .keyboard .text-small {
+    font-size: 12px;
+}
+
+.PC-colors .keyboard .text-medium {
+    font-size: 15px;
+}
+
+.PC-colors .keyboard .content-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.PC-colors .keyboard .align-center {
+    align-items: center;
+}
+
+.PC-colors .keyboard .align-start {
+    align-items: flex-start;
+}
+
+.PC-colors .keyboard .justify-start {
+    justify-content: flex-start;
+}
+
+.PC-colors .keyboard .justify-center {
+    justify-content: center;
+}
+
+.PC-colors .keyboard .justify-between {
+    justify-content: space-between;
+}
+
+.PC-colors .keyboard .space-top {
+    padding-top: 20px;
+}
+
+.PC-colors .keyboard .space-left {
+    padding-left: 20px;
+}
+
+.PC-colors .keyboard .self-center {
+    align-self: center;
+}
+
+.PC-colors .keyboard .self-start {
+    align-self: flex-start;
+}
+
+/* Bump keys (F and J) */
+.PC-colors .keyboard .key-bump .bump {
+    width: 15px;
+    height: 2px;
+    border-radius: 5px;
+    background-color: var(--bg-secondary);
+    box-shadow: inset 0px 0.5px 0px grey, 0px 0px 5px grey;
+}

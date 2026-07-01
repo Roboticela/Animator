@@ -5,6 +5,8 @@ pub fn run() {
     .plugin(tauri_plugin_android_ui::init(
       tauri_plugin_android_ui::AndroidUiConfig::DEFAULT,
     ))
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_fs::init())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

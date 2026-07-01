@@ -1,0 +1,401 @@
+.toshiba-portege-x30-e-colors {
+    /* Theme-aware color variables with fallbacks */
+    --bg-primary: var(--card, grey);
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, black));
+    --text-primary: var(--foreground, white);
+    --text-secondary: var(--foreground, grey);
+    --shadow-color: var(--border, black);
+    --nub-pattern-color: var(--foreground, #000);
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toshiba-portege-x30-e-colors .keyboard {
+    font-size: 16px;
+    border: 2px solid var(--bg-secondary);
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    background-color: var(--bg-primary);
+    /* for nub */
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .nub-outer {
+    width: 3.5em;
+    height: 3.5em;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 58%;
+    left: 43.6%;
+    z-index: 10;
+}
+
+.toshiba-portege-x30-e-colors .nub {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    background-color: var(--bg-secondary, #195EE9);
+    overflow: hidden;
+    box-shadow: 0px 0px 0.7em var(--shadow-color);
+    z-index: 10;
+    color: var(--foreground, #000);
+}
+
+.toshiba-portege-x30-e-colors .nub svg {
+    transform: translate(-50%, -50%);
+}
+
+.toshiba-portege-x30-e-colors .nub svg circle {
+    fill: var(--bg-primary);
+}
+
+.toshiba-portege-x30-e-colors .row {
+    display: flex;
+    gap: 0.7em;
+}
+
+.toshiba-portege-x30-e-colors button {
+    font-size: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0.4em;
+    width: 5.3em;
+    aspect-ratio: 1/1;
+    border-radius: 0.3em;
+    border: none;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0px 0px 0.7em var(--shadow-color);
+}
+
+.toshiba-portege-x30-e-colors .key {
+    font-size: 1.3em;
+}
+
+.toshiba-portege-x30-e-colors .fn-keys {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.toshiba-portege-x30-e-colors .fn-key {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+}
+
+.toshiba-portege-x30-e-colors .row svg {
+    width: 1em;
+    vertical-align: middle;
+}
+
+.toshiba-portege-x30-e-colors .fn-key svg {
+    color: var(--text-secondary);
+}
+
+.toshiba-portege-x30-e-colors .row-1 button {
+    width: 4.1em;
+    aspect-ratio: 3/2;
+}
+
+.toshiba-portege-x30-e-colors .row-1 .key,
+.toshiba-portege-x30-e-colors .pg-up-dn-keys .key {
+    font-size: 0.8em;
+}
+
+.toshiba-portege-x30-e-colors .tilde-key {
+    width: 4.5em;
+}
+
+.toshiba-portege-x30-e-colors .backspace-key {
+    width: 8.4em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .backspace-key .key {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.toshiba-portege-x30-e-colors .backspace-key .text {
+    display: flex;
+    flex-direction: column;
+}
+
+.toshiba-portege-x30-e-colors .tab-key {
+    width: 7.4em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .tab-key .key {
+    display: flex;
+    flex-direction: column;
+}
+
+.toshiba-portege-x30-e-colors .capslock-key {
+    width: 8.7em;
+    aspect-ratio: auto;
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .capslock-key::after {
+    content: "";
+    position: absolute;
+    top: 0.4em;
+    right: 0.4em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 50%;
+    background-color: var(--bg-primary);
+}
+
+.toshiba-portege-x30-e-colors .bump {
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .bump::after {
+    content: "";
+    position: absolute;
+    bottom: 0.2em;
+    width: 1em;
+    height: 3px;
+    border-radius: 3px;
+    background-color: var(--bg-primary);
+}
+
+.toshiba-portege-x30-e-colors .enter-key {
+    width: 9.6em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .enter-key .key {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.toshiba-portege-x30-e-colors .shift-left-key {
+    width: 11.6em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .shift-left-key .key {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.toshiba-portege-x30-e-colors .shift-right-key {
+    width: 8.2em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .shift-right-key .key {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.toshiba-portege-x30-e-colors .pg-up-dn-keys button {
+    width: 4em;
+    aspect-ratio: 3/2;
+}
+
+.toshiba-portege-x30-e-colors .pg-up-dn-keys button:last-child {
+    position: relative;
+    top: 1.5em;
+}
+
+.toshiba-portege-x30-e-colors .ctrl-left-key {
+    width: 5.6em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .space-key {
+    width: 23.4em;
+    aspect-ratio: auto;
+}
+
+.toshiba-portege-x30-e-colors .arrow-keys {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.toshiba-portege-x30-e-colors .arrow-keys .lower {
+    display: flex;
+    gap: 4px;
+}
+
+.toshiba-portege-x30-e-colors .arrow-keys button {
+    width: 6.2em;
+    aspect-ratio: 3/1;
+}
+
+.toshiba-portege-x30-e-colors .backspace-key .key,
+.toshiba-portege-x30-e-colors .capslock-key .key,
+.toshiba-portege-x30-e-colors .enter-key .key,
+.toshiba-portege-x30-e-colors .shift-left-key .key,
+.toshiba-portege-x30-e-colors .shift-right-key .key,
+.toshiba-portege-x30-e-colors .ctrl-left-key .key,
+.toshiba-portege-x30-e-colors .alt-left-key .key,
+.toshiba-portege-x30-e-colors .alt-right-key .key,
+.toshiba-portege-x30-e-colors .ctrl-right-key .key {
+    font-size: 0.8em;
+}
+
+/* setting up the svg's */
+.toshiba-portege-x30-e-colors .bulb-icon {
+    display: block;
+    transform: rotate(-45deg);
+}
+
+.toshiba-portege-x30-e-colors .bulb-icon svg {
+    transform: scale(1.2);
+}
+
+.toshiba-portege-x30-e-colors .align-microchip {
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .microchip-icon {
+    display: inline-block;
+    transform: rotate(90deg);
+}
+
+.toshiba-portege-x30-e-colors .microchip-icon svg {
+    transform: scale(1.4);
+}
+
+.toshiba-portege-x30-e-colors .align-microchip .arrow-right-icon {
+    position: absolute;
+    bottom: 0.04em;
+    right: 1.1em;
+}
+
+.toshiba-portege-x30-e-colors .align-microchip .arrow-right-icon svg {
+    transform: scale(1.3);
+}
+
+.toshiba-portege-x30-e-colors .laptop-icon svg {
+    width: 0.9em;
+}
+
+.toshiba-portege-x30-e-colors .align-brightness {
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .align-brightness .triangle-icon {
+    position: absolute;
+    right: 1em;
+}
+
+.toshiba-portege-x30-e-colors .align-brightness .triangle-icon svg {
+    transform: scale(1.3);
+}
+
+.toshiba-portege-x30-e-colors .aeroplane-icon svg {
+    transform: scale(1.3);
+}
+
+.toshiba-portege-x30-e-colors .numpad-icon svg {
+    transform: scale(1.3);
+}
+
+.toshiba-portege-x30-e-colors .arrow-up-dn-icon {
+    border: 1px solid var(--text-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 2px;
+    padding: 2px;
+    transform: scale(0.8);
+}
+
+.toshiba-portege-x30-e-colors .zoom-icon svg,
+.volume-icon svg {
+    width: 2em;
+}
+
+.toshiba-portege-x30-e-colors .asterisk {
+    transform: scale(2) translateY(0.2em);
+}
+
+.toshiba-portege-x30-e-colors .enter-key svg {
+    transform: scale(3, 2) translateX(0.2em);
+}
+
+.toshiba-portege-x30-e-colors .shift-left-key svg,
+.toshiba-portege-x30-e-colors .shift-right-key svg,
+.toshiba-portege-x30-e-colors .backspace-key svg {
+    transform: scale(1.5);
+}
+
+.toshiba-portege-x30-e-colors .window-key svg {
+    transform: scale(1.8);
+}
+
+.toshiba-portege-x30-e-colors .space-key svg {
+    transform: scale(1.5) translate(0.4em);
+}
+
+.toshiba-portege-x30-e-colors .menu-key svg {
+    transform: scale(2);
+}
+
+.toshiba-portege-x30-e-colors .arrow-keys svg {
+    transform: scale(1.2);
+}
+
+/* Utility Classes */
+.toshiba-portege-x30-e-colors .align-left {
+    align-self: flex-start;
+}
+
+.toshiba-portege-x30-e-colors .align-right {
+    align-self: flex-end;
+}
+
+.toshiba-portege-x30-e-colors .content-between {
+    justify-content: space-between;
+}
+
+.toshiba-portege-x30-e-colors .content-around {
+    justify-content: space-around;
+}
+
+.toshiba-portege-x30-e-colors .no-fn,
+.toshiba-portege-x30-e-colors .no-shift {
+    position: relative;
+}
+
+.toshiba-portege-x30-e-colors .no-fn .shift-key {
+    position: absolute;
+    top: 0.4em;
+}
+
+.toshiba-portege-x30-e-colors .no-shift>.fn-key,
+.toshiba-portege-x30-e-colors .no-shift .fn-keys {
+    position: absolute;
+    bottom: 0.4em;
+}
+
+.toshiba-portege-x30-e-colors .no-shift .fn-keys {
+    padding: 0 0.4em;
+}

@@ -1,0 +1,413 @@
+.Asus-UX370UAR-colors {
+    /* Theme-aware color variables with fallbacks */
+    --bg-primary: var(--card, rgb(94, 94, 94));
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, black));
+    --color-primary: var(--foreground, white);
+    --color-secondary: var(--foreground, white);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+.Asus-UX370UAR-colors {
+    font-size: 16px;
+    border: 2px solid var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    padding: 1em;
+    border-radius: 1em;
+    background-color: var(--bg-primary);
+    max-width: 939px;
+}
+
+.Asus-UX370UAR-colors .row {
+    display: flex;
+    gap: 0.5em;
+}
+
+.Asus-UX370UAR-colors .enter-key-row-outer {
+    display: flex;
+    gap: 0.5em;
+    /* for enter key */
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .enter-key-row-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.Asus-UX370UAR-colors .arrow-keys {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.3em;
+}
+
+.Asus-UX370UAR-colors .up-down-keys {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
+}
+
+.Asus-UX370UAR-colors button {
+    font-size: 1em;
+    width: 3.4em;
+    height: 3.4em;
+    border-radius: 0.36em;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    color: var(--color-primary);
+}
+
+.Asus-UX370UAR-colors .svg {
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.Asus-UX370UAR-colors svg {
+    width: 100%;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.Asus-UX370UAR-colors .row-1 button {
+    width: 2.85em;
+    height: 1.7em;
+    justify-content: space-between;
+    padding: 0.1em;
+}
+
+.Asus-UX370UAR-colors .row-1 .key {
+    font-size: 0.7em;
+    align-self: flex-end;
+    padding-right: 1px;
+}
+
+.Asus-UX370UAR-colors .row-1 .fn-key {
+    align-self: flex-start;
+}
+
+.Asus-UX370UAR-colors .row-1 .svg {
+    width: 0.8em;
+    height: 0.8em;
+}
+
+.Asus-UX370UAR-colors .aeroplane-icon {
+    width: 1em;
+    height: 1em;
+}
+
+.Asus-UX370UAR-colors .aeroplane-icon svg {
+    transform: rotate(45deg);
+}
+
+.Asus-UX370UAR-colors .backlight-icon {
+    position: relative;
+    top: 0.2em;
+}
+
+.Asus-UX370UAR-colors .backlight-icon .sun-icon {
+    position: absolute;
+    top: -0.17em;
+    left: 50%;
+    transform: translate(-50%);
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+}
+
+.Asus-UX370UAR-colors .cross-icon .svg {
+    width: 1em;
+    height: 1em;
+}
+
+.Asus-UX370UAR-colors .extend-screen-icon {
+    display: flex;
+    align-items: center;
+}
+
+.Asus-UX370UAR-colors .row-1 .computer-icon {
+    transform: rotate(180deg);
+    width: 0.7em;
+    height: 0.7em;
+}
+
+.Asus-UX370UAR-colors .row-1 .pause-break-key,
+.Asus-UX370UAR-colors .row-1 .prtsc-sysrq-key {
+    flex-direction: column;
+}
+
+.Asus-UX370UAR-colors .medium-key {
+    width: 2.85em !important;
+}
+
+.Asus-UX370UAR-colors .medium-key .key {
+    margin-top: 0.4em;
+}
+
+.Asus-UX370UAR-colors .backspace-key {
+    width: 6.3em !important;
+    padding: 0.1em;
+}
+
+.Asus-UX370UAR-colors .backspace-key .key {
+    font-size: 0.7em;
+    align-self: flex-end;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.Asus-UX370UAR-colors .backspace-key .svg {
+    align-self: flex-start;
+    width: 2em;
+    height: 2em;
+    position: relative;
+    bottom: 0.7em;
+}
+
+.Asus-UX370UAR-colors .tab-key {
+    width: 5em !important;
+}
+
+.Asus-UX370UAR-colors .tab-key .key {
+    font-size: 0.7em;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.1em;
+}
+
+.Asus-UX370UAR-colors .tab-key .icon {
+    display: flex;
+    flex-direction: column;
+}
+
+.Asus-UX370UAR-colors .tab-key .svg {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.Asus-UX370UAR-colors .capslock-key {
+    width: 6em !important;
+}
+
+.Asus-UX370UAR-colors .capslock-key .key {
+    font-size: 0.7em;
+    align-self: flex-start;
+    padding: 0.1em;
+}
+
+.Asus-UX370UAR-colors .enter-key-wrapper {
+    position: absolute;
+    right: 0.1em;
+    width: 4em !important;
+    height: 100%;
+}
+
+.Asus-UX370UAR-colors .enter-key {
+    width: 100% !important;
+    height: 100% !important;
+    clip-path: polygon(-20% -20%, 120% -20%, 120% 120%, 20% 120%, 20% 46%, -20% 46%);
+    justify-content: flex-start !important;
+}
+
+.Asus-UX370UAR-colors .enter-key .key {
+    margin-top: 0.8em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .enter-key .text {
+    font-size: 0.7em;
+}
+
+.Asus-UX370UAR-colors .enter-key .svg {
+    width: 2em;
+    height: 2em;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    transform: translate(15%, 60%);
+}
+
+.Asus-UX370UAR-colors .shift-left-key {
+    width: 4.35em !important;
+}
+
+.Asus-UX370UAR-colors .shift-left-key .key {
+    font-size: 0.7em;
+    align-self: flex-start;
+    padding: 0.1em;
+    display: flex;
+    align-items: center;
+}
+
+.Asus-UX370UAR-colors .shift-right-key {
+    width: 8.7em !important;
+}
+
+.Asus-UX370UAR-colors .shift-right-key .key {
+    padding: 0.1em;
+    font-size: 0.7em;
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+}
+
+.Asus-UX370UAR-colors .ctrl-left-key {
+    width: 4.299em !important;
+}
+
+.Asus-UX370UAR-colors .ctrl-left-key .key {
+    font-size: 0.7em;
+    align-self: flex-start;
+    padding: 0.1em;
+}
+
+.Asus-UX370UAR-colors .alt-left-key .key,
+.Asus-UX370UAR-colors .alt-right-key .key {
+    font-size: 0.7em;
+}
+
+.Asus-UX370UAR-colors .space-key {
+    width: 19em !important;
+}
+
+.Asus-UX370UAR-colors .ctrl-right-key .key {
+    font-size: 0.7em;
+}
+
+.Asus-UX370UAR-colors .arrow-keys button {
+    width: 4.01em !important;
+    height: 1.7em;
+    justify-content: flex-start;
+}
+
+.Asus-UX370UAR-colors .arrow-keys .svg {
+    width: 0.6em;
+    height: 0.6em;
+}
+
+.Asus-UX370UAR-colors .arrow-keys .fn-key {
+    font-size: 0.5em;
+}
+
+.Asus-UX370UAR-colors .light-key {
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .light-key .light {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--bg-primary);
+    position: absolute;
+    top: 50%;
+    right: 0.3em;
+    transform: translateY(-50%);
+}
+
+.Asus-UX370UAR-colors .row-1 .light {
+    top: auto;
+    bottom: 0.3em;
+    right: 0.3em;
+    width: 3px;
+    height: 3px;
+}
+
+.Asus-UX370UAR-colors .bump-key {
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .bump-key .bump {
+    position: absolute;
+    bottom: 0.19em;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1.1em;
+    height: 0.09em;
+    border-radius: 0.1em;
+    background-color: var(--bg-primary);
+}
+
+/* Utility classes */
+.Asus-UX370UAR-colors .no-shift {
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .no-shift .fn-key {
+    position: absolute;
+    bottom: 0.1em;
+    right: 0.1em;
+}
+
+.Asus-UX370UAR-colors .row-1 .fn-key {
+    right: auto;
+    left: 0.2em;
+}
+
+.Asus-UX370UAR-colors .row-1 .cross-icon {
+    bottom: 0;
+}
+
+.Asus-UX370UAR-colors .ctrl-right-key .fn-key {
+    left: 0.1em;
+    right: auto;
+}
+
+.Asus-UX370UAR-colors .arrow-keys .fn-key {
+    right: 50%;
+    transform: translateX(50%);
+}
+
+.Asus-UX370UAR-colors .no-fn {
+    position: relative;
+}
+
+.Asus-UX370UAR-colors .no-fn .shift-key {
+    position: absolute;
+    top: 0.1em;
+    left: 0.2em;
+}
+
+.Asus-UX370UAR-colors .altgr-key {
+    position: absolute;
+    bottom: 0.1em;
+    right: 0.1em;
+}
+
+.Asus-UX370UAR-colors button.content-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.Asus-UX370UAR-colors .row-1 .content-center * {
+    align-self: center;
+}
+
+.Asus-UX370UAR-colors .border {
+    border: 0.1em solid var(--color-primary);
+    border-radius: 0.1em;
+}
+
+.Asus-UX370UAR-colors .row-1 .font-small {
+    font-size: 0.59em;
+}
+
+.Asus-UX370UAR-colors .font-medium {
+    font-size: 0.79em;
+}

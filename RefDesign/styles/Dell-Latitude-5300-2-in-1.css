@@ -1,0 +1,351 @@
+.Dell-Latitude-5300-2-in-1-colors {
+    /* Theme-aware color variables with fallbacks */
+    --bg-primary: var(--card, #3B3A38);
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, #3B3A38));
+    --text-color-primary: var(--foreground, #CAC9CD);
+    --text-color-secondary: var(--foreground, #848484);
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .keyboard {
+    font-size: 16px;
+    padding: 1em;
+    border: 2px solid var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    background-color: var(--bg-primary);
+    border-radius: 0.7em;
+    position: relative;
+    max-width: fit-content;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .keyboard-decor {
+    position: absolute;
+    bottom: -0.4em;
+    left: -0.4em;
+    width: 54.9em;
+    height: 2.4em;
+    border-top-right-radius: 1em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .row {
+    display: flex;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key-row-outer {
+    display: flex;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key-row-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors button {
+    font-size: 1.5em;
+    width: 2.8em;
+    height: 2.8em;
+    border-radius: 0.3em;
+    background-color: var(--bg-secondary);
+    color: var(--text-color-primary);
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0.2em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .function-key {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .function-key .fn-key {
+    position: absolute;
+    bottom: 0.2em;
+    right: 0.2em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .fn-key {
+    color: var(--text-color-secondary);
+    font-size: 0.6em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .svg {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors svg {
+    width: 100%;
+    height: 100%;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .row-1 {
+    justify-content: space-between;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .row-1 button {
+    height: 1.8em;
+    width: 2.7em;
+    justify-content: space-between;
+    gap: 2px;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .row-1 .key {
+    font-size: 0.7em;
+    height: 17px;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .lock-icon {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .lock-icon .lock-text {
+    font-size: 0.4em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--bg-primary);
+    font-weight: bold;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .bump-key {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .bump {
+    position: absolute;
+    bottom: 0.2em;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1em;
+    height: 0.01em;
+    background-color: #64635F;
+    border-radius: 0.1em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .light-key {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .light {
+    position: absolute;
+    top: 0.4em;
+    right: 0.2em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--bg-primary);
+}
+
+.Dell-Latitude-5300-2-in-1-colors .mic-icon {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .cross-icon {
+    position: absolute;
+    left: 0.74em;
+    width: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .keyboard-icon {
+    width: 1.3em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .extend-screen-icon {
+    position: relative;
+    top: 0.3em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .laptop-icon {
+    background-color: var(--bg-secondary);
+    position: absolute;
+    z-index: 1;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .screen-icon {
+    background-color: var(--bg-secondary);
+    position: absolute;
+    top: -0.4em;
+    left: 0.4em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .medium-size-key {
+    width: 2.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .altgr-key {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .altgr {
+    position: absolute;
+    bottom: 0.2em;
+    right: 0.2em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .backspace-key {
+    width: 4.7em;
+    padding-right: 0.6em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .tab-key {
+    align-items: start;
+    width: 4.14em;
+    padding-left: 0.6em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .tab-key .key {
+    display: flex;
+    flex-direction: column;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .capslock-key {
+    align-items: flex-start;
+    width: 4.64em;
+    padding-left: 0.6em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .capslock-key .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key-container {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key {
+    justify-content: flex-start;
+    width: 3em;
+    height: 100%;
+    clip-path: polygon(-20% -20%, 120% -20%, 120% 120%, 25% 120%, 25% 47%, -20% 47%);
+    box-shadow: none;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key-decor {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 53%;
+    width: 1.1em;
+    background-color: var(--bg-primary);
+    clip-path: polygon(-30% 0%, 100% 0%, 100% 130%, 16% 130%, 16% 18%, -30% 4%);
+}
+
+.Dell-Latitude-5300-2-in-1-colors .enter-key .key {
+    margin-top: 0.9em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .shift-left-key {
+    width: 3.5em;
+    align-items: flex-start;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .decor-container {
+    position: relative;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .btn-above {
+    position: relative;
+    z-index: 1;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .decor {
+    position: absolute;
+    top: 0;
+    right: -0.25em;
+    height: 100%;
+    width: 1em;
+    background-color: var(--bg-primary);
+    border-radius: 0.2em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .decor-left {
+    left: -0.25em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .shift-right-key {
+    width: 6.94em;
+    align-items: flex-end;
+    padding-right: 0.6em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .ctrl-left-key {
+    align-items: flex-start;
+    padding-left: 0.6em;
+    width: 3.5em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .ctrl-left-key .key,
+.Dell-Latitude-5300-2-in-1-colors .ctrl-right-key .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .alt-left-key .key,
+.Dell-Latitude-5300-2-in-1-colors .alt-right-key .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .space-key {
+    width: 15.85em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .arrow-keys {
+    display: flex;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .set {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .set button {
+    height: 1.8em;
+    /* width: 2.7em; */
+    padding: 0.3em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .set .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .up-dn-keys button {
+    width: 3.5em;
+}
+
+/* Utlitiy Classes */
+.Dell-Latitude-5300-2-in-1-colors .align-start {
+    align-self: flex-start;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .align-end {
+    align-self: flex-end;
+}
+
+.Dell-Latitude-5300-2-in-1-colors button.content-end {
+    justify-content: flex-end;
+}
+
+.Dell-Latitude-5300-2-in-1-colors button.content-between {
+    justify-content: space-between;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .content-between .shift-key {
+    height: 29px;
+}
+
+.Dell-Latitude-5300-2-in-1-colors .function-key .shift-key {
+    height: 29px;
+}

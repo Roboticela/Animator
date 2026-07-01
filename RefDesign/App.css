@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --border: #e5e5e5;
+  --accent: #f5f5f5;
+  --primary: #171717;
+  --font-inter: 'Inter', sans-serif;
+}
+
+/* Navy Theme */
+[data-theme="navy"] {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e293b;
+  --border: #334155;
+  --accent: #334155;
+  --primary: #60a5fa;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --accent: #2a2a2a;
+  --primary: #ededed;
+  --keyboard-buttons-color: #000000;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+  --accent: #f3f4f6;
+  --primary: #171717;
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+  --background: #7c2d12;
+  --foreground: #fff7ed;
+  --card: #9a3412;
+  --border: #c2410c;
+  --accent: #c2410c;
+  --primary: #fb923c;
+}
+
+/* Ocean Theme */
+[data-theme="ocean"] {
+  --background: #164e63;
+  --foreground: #e0f2fe;
+  --card: #155e75;
+  --border: #0891b2;
+  --accent: #0891b2;
+  --primary: #22d3ee;
+}
+
+/* Forest Theme */
+[data-theme="forest"] {
+  --background: #14532d;
+  --foreground: #f0fdf4;
+  --card: #166534;
+  --border: #15803d;
+  --accent: #15803d;
+  --primary: #4ade80;
+}
+
+/* Purple Dream Theme */
+[data-theme="purple"] {
+  --background: #581c87;
+  --foreground: #faf5ff;
+  --card: #6b21a8;
+  --border: #7c3aed;
+  --accent: #7c3aed;
+  --primary: #c084fc;
+}
+
+/* Midnight Theme */
+[data-theme="midnight"] {
+  --background: #1e1b4b;
+  --foreground: #e0e7ff;
+  --card: #312e81;
+  --border: #4338ca;
+  --accent: #4338ca;
+  --primary: #818cf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-primary: var(--primary);
+  --font-sans: var(--font-inter);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+  margin: 2px;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+  border: 2px solid var(--background);
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+  min-height: 30px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  border: 1px solid var(--background);
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+  border: 1px solid var(--background);
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Inter, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+/* Custom Scrollbar Styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+  margin: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+  border: 2px solid var(--card);
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+  min-height: 30px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  border: 1px solid var(--card);
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+  border: 1px solid var(--card);
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Hide textarea scrollbar */
+.hide-scrollbar {
+  overflow: hidden !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

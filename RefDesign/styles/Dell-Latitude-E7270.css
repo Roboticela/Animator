@@ -1,0 +1,352 @@
+.Dell-Latitude-E7270-colors {
+    /* Theme-aware color variables with fallbacks */
+    --bg-primary: var(--card, #353535);
+    --bg-secondary: var(--keyboard-buttons-color, var(--accent, black));
+    --color-primary: var(--foreground, white);
+    --color-secondary: var(--foreground, #508593);
+    --bg-light: var(--bg-primary, #616161);
+    --bg-bump: var(--bg-primary, #4b4b4b);
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+    max-width: fit-content;
+}
+
+
+.Dell-Latitude-E7270-colors .keyboard {
+    font-size: 16px;
+    padding: 1em;
+    border-radius: 1em;
+    border: 2px solid var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    background-color: var(--bg-primary);
+}
+
+.Dell-Latitude-E7270-colors .row {
+    display: flex;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-E7270-colors button {
+    font-size: 1.3em;
+    width: 3em;
+    height: 3em;
+    border-radius: 0.3em;
+    border: none;
+    padding: 0.4em;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: space-between;
+    background-color: var(--bg-secondary);
+    color: var(--color-primary);
+}
+
+.Dell-Latitude-E7270-colors .fn-key {
+    color: var(--color-secondary);
+    font-size: 0.7em;
+    align-self: flex-end;
+}
+
+.Dell-Latitude-E7270-colors .function-source-key {
+    color: var(--color-secondary);
+}
+
+.Dell-Latitude-E7270-colors .svg {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+}
+
+.Dell-Latitude-E7270-colors svg {
+    width: 100%;
+    height: 100%;
+}
+
+.Dell-Latitude-E7270-colors .light-key {
+    position: relative;
+}
+
+.Dell-Latitude-E7270-colors .light-key .light {
+    position: absolute;
+    top: 0.3em;
+    right: 0.3em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--bg-light);
+}
+
+.Dell-Latitude-E7270-colors .bump-key {
+    position: relative;
+}
+
+.Dell-Latitude-E7270-colors .bump-key .bump {
+    position: absolute;
+    bottom: 0.3em;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.7em;
+    height: 0.1em;
+    border-radius: 1em;
+    background-color: var(--bg-bump);
+}
+
+.Dell-Latitude-E7270-colors .row-1 button {
+    width: 2.62em;
+    height: 2em;
+    padding: 0.2em;
+}
+
+.Dell-Latitude-E7270-colors .row-1 .esc-key,
+.Dell-Latitude-E7270-colors .row-1 .delete-key {
+    width: 3em;
+}
+
+.Dell-Latitude-E7270-colors .row-1 .key {
+    font-size: 0.7em;
+    height: 15px;
+}
+
+.Dell-Latitude-E7270-colors .arrow-keys {
+    display: flex;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-E7270-colors .set {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+}
+
+.Dell-Latitude-E7270-colors .page-down-key {
+    align-self: flex-end;
+}
+
+.Dell-Latitude-E7270-colors .arrow-keys .key {
+    font-size: 0.6em;
+}
+
+.Dell-Latitude-E7270-colors .arrow-keys button {
+    height: 2em;
+    padding: 0.2em;
+}
+
+.Dell-Latitude-E7270-colors .up-key,
+.Dell-Latitude-E7270-colors .down-key,
+.Dell-Latitude-E7270-colors .left-key,
+.Dell-Latitude-E7270-colors .right-key {
+    width: 3.28em;
+}
+
+.Dell-Latitude-E7270-colors .delete-key {
+    align-items: center;
+}
+
+.Dell-Latitude-E7270-colors .backspace-key {
+    width: 4.8em;
+    justify-content: flex-start;
+}
+
+.Dell-Latitude-E7270-colors .backspace-key .key {
+    align-self: stretch;
+    font-size: 0.7em;
+    display: flex;
+    flex-direction: column;
+}
+
+.Dell-Latitude-E7270-colors .backspace-key .text {
+    align-self: flex-end;
+}
+
+.Dell-Latitude-E7270-colors .backspace-key .icon {
+    align-self: flex-start;
+}
+
+.Dell-Latitude-E7270-colors .tab-key {
+    width: 4.8em;
+}
+
+.Dell-Latitude-E7270-colors .tab-key .key {
+    font-size: 0.7em;
+    display: flex;
+    flex-direction: column;
+}
+
+.Dell-Latitude-E7270-colors .tab-key .text {
+    align-self: flex-start;
+}
+
+.Dell-Latitude-E7270-colors .tab-key .icon {
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+.Dell-Latitude-E7270-colors .capslock-key {
+    width: 5.55em;
+}
+
+.Dell-Latitude-E7270-colors .capslock-key .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-E7270-colors .enter-key {
+    width: 5.8em;
+    position: relative;
+}
+
+.Dell-Latitude-E7270-colors .enter-key .key {
+    font-size: 0.7em;
+    align-self: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.Dell-Latitude-E7270-colors .enter-key .text {
+    position: relative;
+    z-index: 1;
+    background-color: var(--bg-secondary);
+}
+
+.Dell-Latitude-E7270-colors .enter-key .icon {
+    width: 3em;
+    height: 3em;
+    position: absolute;
+    right: 0.4em;
+    top: 0.5em;
+}
+
+.Dell-Latitude-E7270-colors .shift-left-key {
+    width: 7.5em;
+}
+
+.Dell-Latitude-E7270-colors .shift-left-key .key {
+    font-size: 0.7em;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.Dell-Latitude-E7270-colors .shift-right-key {
+    width: 7.35em;
+}
+
+.Dell-Latitude-E7270-colors .shift-right-key .key {
+    font-size: 0.7em;
+    align-self: flex-end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.Dell-Latitude-E7270-colors .ctrl-left-key {
+    width: 3.92em;
+}
+
+.Dell-Latitude-E7270-colors .ctrl-left-key .key,
+.Dell-Latitude-E7270-colors .ctrl-right-key .key,
+.Dell-Latitude-E7270-colors .alt-left-key .key,
+.Dell-Latitude-E7270-colors .alt-right-key .key,
+.Dell-Latitude-E7270-colors .function-source-key .key {
+    font-size: 0.7em;
+}
+
+.Dell-Latitude-E7270-colors .space-key {
+    width: 17.21em;
+}
+
+.Dell-Latitude-E7270-colors .left-key,
+.Dell-Latitude-E7270-colors .right-key {
+    flex-direction: row;
+}
+
+.Dell-Latitude-E7270-colors .left-key .fn-key,
+.Dell-Latitude-E7270-colors .right-key .fn-key {
+    align-self: center;
+}
+
+.Dell-Latitude-E7270-colors .up-key .key {
+    transform: rotate(90deg);
+}
+
+.Dell-Latitude-E7270-colors .down-key .key {
+    transform: rotate(-90deg);
+}
+
+.Dell-Latitude-E7270-colors .right-key .key {
+    transform: rotate(180deg);
+}
+
+.Dell-Latitude-E7270-colors .lock-icon {
+    position: relative;
+}
+
+.Dell-Latitude-E7270-colors .lock-icon .lock-text {
+    position: absolute;
+    top: 59%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--bg-secondary);
+    font-size: 0.6em;
+}
+
+.Dell-Latitude-E7270-colors .lock-text.svg {
+    width: 0.8em;
+}
+
+.Dell-Latitude-E7270-colors .mic-icon {
+    position: relative;
+    right: 0.2em;
+}
+
+.Dell-Latitude-E7270-colors .mic-icon .cross {
+    position: absolute;
+    top: 0;
+    right: -0.35em;
+    width: 0.8em;
+}
+
+.Dell-Latitude-E7270-colors .extend-screen-icon {
+    position: relative;
+    right: 0.4em;
+}
+
+.Dell-Latitude-E7270-colors .extend-screen-icon .laptop-icon {
+    /* for using z-index */
+    position: relative;
+    z-index: 1;
+    background-color: var(--bg-secondary);
+}
+
+.Dell-Latitude-E7270-colors .extend-screen-icon .monitor-icon {
+    position: absolute;
+    top: -0.5em;
+    right: -0.5em;
+}
+
+/* Utility Classes */
+.Dell-Latitude-E7270-colors .fn-center {
+    position: relative;
+}
+
+.Dell-Latitude-E7270-colors .fn-center .fn-key {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.Dell-Latitude-E7270-colors .content-center {
+    justify-content: center;
+    align-items: center;
+}
+
+.shift-key {
+    height: 26px;
+}
