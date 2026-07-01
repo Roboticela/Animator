@@ -1,4 +1,4 @@
-import { Pause, Play, Redo2, Repeat, Rewind, Undo2 } from "lucide-react";
+import { Pause, Play, Redo2, Repeat, SkipBack, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useAnimationStore } from "@/store/animationStore";
@@ -36,7 +36,7 @@ export function TransportControls() {
   return (
     <div className="flex flex-shrink-0 items-center gap-1.5">
       <Button variant="ghost" size="icon" disabled={disabled} title="Stop / rewind" onClick={stop}>
-        <Rewind className="h-4 w-4" />
+        <SkipBack className="h-4 w-4" />
       </Button>
       <Button variant="default" size="icon" disabled={disabled} title="Play / pause (space)" onClick={togglePlay}>
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}

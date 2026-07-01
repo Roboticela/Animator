@@ -1,4 +1,4 @@
-import { BookOpen, Bone, Film, KeySquare, Sparkles, Upload } from "lucide-react";
+import { BookOpen, Clapperboard, Diamond, FileDown, FileUp, Spline } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 
 interface GuideModalProps {
@@ -8,27 +8,27 @@ interface GuideModalProps {
 
 const STEPS = [
   {
-    icon: Upload,
+    icon: FileUp,
     title: "1. Import or try the sample rig",
     body: "Drop in a .glb, .gltf, .fbx or .obj file, or click \"Load Sample Rig\" to explore the tool immediately without a file.",
   },
   {
-    icon: Bone,
+    icon: Spline,
     title: "2. Inspect the armature",
     body: "The Armatures & Bones panel lists every bone. Click one (or click a joint in the viewport) to select it — the gizmo appears on the selected bone.",
   },
   {
-    icon: Sparkles,
+    icon: Clapperboard,
     title: "3. Try a premade animation",
     body: "Open the Premade tab in the Animation Library and click any move (Idle, Walk, Run, Wave, Jump, Spin, Dance) to preview it instantly on your rig.",
   },
   {
-    icon: KeySquare,
+    icon: Diamond,
     title: "4. Hand-author your own clip",
     body: "Create a Custom clip, pose a bone with the Move/Rotate/Scale gizmo, then click \"Set Keyframe\" to record that pose at the playhead.",
   },
   {
-    icon: Film,
+    icon: FileDown,
     title: "5. Export",
     body: "Once you're happy with a clip, use Export to bake it into the model and save a new .glb.",
   },

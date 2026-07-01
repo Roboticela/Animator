@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeySquare, MousePointerClick, RefreshCcw } from "lucide-react";
+import { Diamond, Move3d, RotateCcw } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { Button } from "@/components/ui/Button";
@@ -41,7 +41,7 @@ export function TransformInspector() {
 
   if (!selectedBoneName || !bone) {
     return (
-      <Panel title="Transform" icon={<MousePointerClick className="h-3.5 w-3.5" />}>
+      <Panel title="Transform" icon={<Move3d className="h-3.5 w-3.5" />}>
         <p className="p-1 text-xs leading-relaxed text-foreground-muted">
           Select a bone (in the viewport or the Armature tree) to pose it with the gizmo or type exact values here.
         </p>
@@ -74,10 +74,10 @@ export function TransformInspector() {
   return (
     <Panel
       title="Transform"
-      icon={<MousePointerClick className="h-3.5 w-3.5" />}
+      icon={<Move3d className="h-3.5 w-3.5" />}
       actions={
         <Button variant="ghost" size="icon" title="Reset this bone" onClick={resetBone}>
-          <RefreshCcw className="h-3.5 w-3.5" />
+          <RotateCcw className="h-3.5 w-3.5" />
         </Button>
       }
     >
@@ -116,7 +116,7 @@ export function TransformInspector() {
         className="mt-3 w-full"
         title={canKeyframe ? "Add a keyframe for this bone at the playhead" : "Select or create a custom clip to keyframe poses"}
       >
-        <KeySquare className="h-3.5 w-3.5" />
+        <Diamond className="h-3.5 w-3.5" />
         Set Keyframe
       </Button>
     </Panel>

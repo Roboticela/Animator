@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Download, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, FileDown, Loader2, Package, XCircle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useModelStore } from "@/store/modelStore";
@@ -54,7 +54,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Export as GLB" icon={<Download className="h-5 w-5 text-primary" />}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Export as GLB" icon={<Package className="h-5 w-5 text-primary" />}>
       <div className="space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-foreground-muted">File name</label>
@@ -93,7 +93,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
         )}
 
         <Button className="w-full" onClick={handleExport} disabled={status === "working"}>
-          {status === "working" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {status === "working" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
           {status === "working" ? "Exporting..." : "Export GLB"}
         </Button>
         <p className="text-center text-[11px] text-foreground-muted">

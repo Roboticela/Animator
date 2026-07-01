@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Clock, Copy } from "lucide-react";
+import { Clapperboard, FilePenLine } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { TransportControls } from "@/components/timeline/TransportControls";
@@ -32,7 +32,7 @@ export function TimelinePanel() {
 
   if (!activeClip) {
     return (
-      <Panel title="Timeline" icon={<Clock className="h-3.5 w-3.5" />} noPadding bodyClassName="flex items-center justify-center">
+      <Panel title="Timeline" icon={<Clapperboard className="h-3.5 w-3.5" />} noPadding bodyClassName="flex items-center justify-center">
         <p className="p-4 text-center text-xs text-foreground-muted">
           Pick a clip from the Animation Library (Embedded / Premade / Custom) to play or edit it here.
         </p>
@@ -66,13 +66,13 @@ export function TimelinePanel() {
   return (
     <Panel
       title={`Timeline — ${activeClip.name}`}
-      icon={<Clock className="h-3.5 w-3.5" />}
+      icon={<Clapperboard className="h-3.5 w-3.5" />}
       noPadding
       bodyClassName="flex flex-col overflow-hidden"
       actions={
         !isEditable ? (
           <Button variant="outline" size="xs" onClick={() => duplicateClipAsCustom(activeClip)}>
-            <Copy className="h-3 w-3" />
+            <FilePenLine className="h-3 w-3" />
             Edit as Custom
           </Button>
         ) : undefined

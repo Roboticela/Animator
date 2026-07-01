@@ -1,18 +1,18 @@
 import { useState } from "react";
 import {
+  Activity,
   ArrowUpCircle,
   Copy,
+  Drama,
   Film,
   Footprints,
   Hand,
-  Music,
   Pencil,
+  PersonStanding,
   Play,
   Plus,
   RotateCw,
-  Sparkles,
   Trash2,
-  Zap,
 } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
@@ -25,13 +25,13 @@ import { applyPremadeAnimation, createNewCustomClip, duplicateClipAsCustom, dupl
 import type { ClipMeta } from "@/types/model";
 
 const PREMADE_ICONS: Record<ProceduralAnimationId, typeof Play> = {
-  idle: Sparkles,
+  idle: PersonStanding,
   walk: Footprints,
-  run: Zap,
+  run: Activity,
   wave: Hand,
   jump: ArrowUpCircle,
   spin: RotateCw,
-  dance: Music,
+  dance: Drama,
 };
 
 const TOTAL_ROLE_COUNT = 18;

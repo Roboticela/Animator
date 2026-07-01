@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { KeyframeDiamond } from "@/components/timeline/KeyframeDiamond";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,7 @@ export function TimelineTrackRow({
         className="flex-shrink-0 text-foreground-muted hover:text-danger"
         title="Remove all keyframes for this bone"
       >
-        <X className="h-3 w-3" />
+        <Trash2 className="h-3 w-3" />
       </button>
     </div>
   );

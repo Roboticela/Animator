@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { Bone, FolderOpen, Loader2, Sparkles, UploadCloud } from "lucide-react";
+import { Clapperboard, FileDown, FileUp, Loader2, Spline } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useOpenModel } from "@/hooks/useOpenModel";
 
 const FEATURES = [
-  { icon: Bone, text: "Inspect every armature & bone" },
-  { icon: Sparkles, text: "Instant premade animations" },
-  { icon: UploadCloud, text: "Hand-author custom clips & export to GLB" },
+  { icon: Spline, text: "Inspect every armature & bone" },
+  { icon: Clapperboard, text: "Instant premade animations" },
+  { icon: FileDown, text: "Hand-author custom clips & export to GLB" },
 ];
 
 export function ImportDropzone() {
@@ -54,7 +54,7 @@ export function ImportDropzone() {
           {isLoading ? (
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           ) : (
-            <UploadCloud className="h-10 w-10 text-foreground/40" />
+            <FileUp className="h-10 w-10 text-foreground/40" />
           )}
           <div>
             <p className="text-sm font-medium text-foreground">
@@ -64,7 +64,7 @@ export function ImportDropzone() {
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={openFile} disabled={isLoading} size="sm" variant="default">
-              <FolderOpen className="h-4 w-4" />
+              <FileUp className="h-4 w-4" />
               Browse files
             </Button>
           </motion.div>

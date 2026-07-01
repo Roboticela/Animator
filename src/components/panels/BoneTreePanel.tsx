@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bone as BoneIcon, Search, X } from "lucide-react";
+import { GitBranch, Search, X } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { useModelStore } from "@/store/modelStore";
@@ -19,7 +19,7 @@ export function BoneTreePanel() {
   if (!model) return null;
 
   return (
-    <Panel title="Armatures & Bones" icon={<BoneIcon className="h-3.5 w-3.5" />} noPadding>
+    <Panel title="Armatures & Bones" icon={<GitBranch className="h-3.5 w-3.5" />} noPadding>
       <div className="flex flex-col gap-2 border-b border-border/60 p-2">
         <div className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background-subtle px-2">
           <Search className="h-3.5 w-3.5 text-foreground-muted" />

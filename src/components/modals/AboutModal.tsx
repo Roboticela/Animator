@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Cuboid } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 
 interface AboutModalProps {
@@ -8,7 +8,7 @@ interface AboutModalProps {
 
 export function AboutModal({ isOpen, onClose }: AboutModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="About Animator" icon={<Info className="h-5 w-5 text-primary" />}>
+    <Modal isOpen={isOpen} onClose={onClose} title="About Animator" icon={<Cuboid className="h-5 w-5 text-primary" />}>
       <div className="space-y-3 text-sm leading-relaxed text-foreground/55">
         <p>
           <span className="font-semibold text-foreground">Animator</span> is a browser/desktop tool for importing

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookMarked,
+  BookOpen,
   ChevronDown,
-  Download,
+  Cuboid,
   ExternalLink,
-  FolderOpen,
+  FileDown,
+  FileUp,
+  FileX2,
   Info,
   LifeBuoy,
   Loader2,
@@ -13,8 +15,6 @@ import {
   Palette,
   Scale,
   Shield,
-  Sparkles,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -126,7 +126,7 @@ export function AppHeader() {
           <input ref={inputRef} type="file" accept=".glb,.gltf,.fbx,.obj" className="hidden" onChange={handleInputChange} />
 
           <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap" onClick={openFile} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
             <span className="hidden sm:inline">Open</span>
           </Button>
 
@@ -137,7 +137,7 @@ export function AppHeader() {
             onClick={() => setExportOpen(true)}
             disabled={!model || isLoading}
           >
-            <Download className="h-4 w-4" />
+            <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>
           </Button>
 
@@ -173,14 +173,14 @@ export function AppHeader() {
               <AnimatePresence>
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => void loadSampleRig()} disabled={isLoading}>
-                    <Sparkles className="h-4 w-4" />
+                    <Cuboid className="h-4 w-4" />
                     <span>Load Sample Rig</span>
                   </DropdownMenuItem>
                 </motion.div>
                 {model && (
                   <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                     <DropdownMenuItem className="cursor-pointer" onClick={closeModel}>
-                      <X className="h-4 w-4" />
+                      <FileX2 className="h-4 w-4" />
                       <span>Close Model</span>
                     </DropdownMenuItem>
                   </motion.div>
@@ -198,7 +198,7 @@ export function AppHeader() {
                 </motion.div>
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => setGuideOpen(true)}>
-                    <BookMarked className="h-4 w-4" />
+                    <BookOpen className="h-4 w-4" />
                     <span>Guide</span>
                   </DropdownMenuItem>
                 </motion.div>

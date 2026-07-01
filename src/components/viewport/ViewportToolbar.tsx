@@ -1,12 +1,12 @@
-import { Bone, Eye, EyeOff, Grid3x3, Move, RefreshCcw, RotateCw, Scaling } from "lucide-react";
+import { Bone, Box, Grid3x3, Move3d, Rotate3d, RotateCcw, Scale3d, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore, type TransformMode } from "@/store/animationStore";
 
-const MODES: { mode: TransformMode; icon: typeof Move; label: string }[] = [
-  { mode: "translate", icon: Move, label: "Move (W)" },
-  { mode: "rotate", icon: RotateCw, label: "Rotate (E)" },
-  { mode: "scale", icon: Scaling, label: "Scale (R)" },
+const MODES: { mode: TransformMode; icon: typeof Move3d; label: string }[] = [
+  { mode: "translate", icon: Move3d, label: "Move (W)" },
+  { mode: "rotate", icon: Rotate3d, label: "Rotate (E)" },
+  { mode: "scale", icon: Scale3d, label: "Scale (R)" },
 ];
 
 export function ViewportToolbar() {
@@ -40,7 +40,7 @@ export function ViewportToolbar() {
 
       <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm">
         <Button variant="ghost" size="icon" title="Reset pose to bind pose" onClick={resetToRestPose}>
-          <RefreshCcw className="h-4 w-4" />
+          <RotateCcw className="h-4 w-4" />
         </Button>
         <Button
           variant={showSkeleton ? "default" : "ghost"}
@@ -59,7 +59,7 @@ export function ViewportToolbar() {
           title="Toggle wireframe"
           onClick={toggleWireframe}
         >
-          {wireframe ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          {wireframe ? <ScanLine className="h-4 w-4" /> : <Box className="h-4 w-4" />}
         </Button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Boxes, FileBox } from "lucide-react";
+import { FileBox, Layers3 } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { useModelStore } from "@/store/modelStore";
 
@@ -17,7 +17,7 @@ export function SceneInfoPanel() {
   const { stats } = model;
 
   return (
-    <Panel title="Scene Info" icon={<Boxes className="h-3.5 w-3.5" />}>
+    <Panel title="Scene Info" icon={<Layers3 className="h-3.5 w-3.5" />}>
       <div className="mb-2 flex items-center gap-2 rounded-lg border border-border/60 bg-background-subtle px-2 py-1.5">
         <FileBox className="h-4 w-4 flex-shrink-0 text-primary" />
         <div className="min-w-0">
