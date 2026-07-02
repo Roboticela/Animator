@@ -1,18 +1,19 @@
 import { Trash2 } from "lucide-react";
-import { KeyframeDiamond } from "@/components/timeline/KeyframeDiamond";
+import { TimelineKeyframe } from "@/components/timeline/TimelineKeyframe";
 import { cn } from "@/lib/utils";
 import type { KeyframeEasingId } from "@/lib/keyframe-easing";
+import { TIMELINE_LABEL_WIDTH, TIMELINE_ROW_HEIGHT, timeToPx } from "@/lib/timeline-utils";
 
 const SEGMENT_COLORS: Record<KeyframeEasingId, string> = {
-  linear: "bg-secondary/30",
-  easeIn: "bg-sky-500/25",
-  easeOut: "bg-violet-500/25",
-  easeInOut: "bg-indigo-500/25",
-  hold: "bg-amber-500/25",
-  easeInBack: "bg-orange-500/25",
-  easeOutBack: "bg-rose-500/25",
-  bounce: "bg-emerald-500/25",
-  elastic: "bg-teal-500/25",
+  linear: "from-secondary/20 to-secondary/5",
+  easeIn: "from-sky-500/30 to-sky-500/5",
+  easeOut: "from-violet-500/30 to-violet-500/5",
+  easeInOut: "from-indigo-500/30 to-indigo-500/5",
+  hold: "from-amber-500/30 to-amber-500/5",
+  easeInBack: "from-orange-500/30 to-orange-500/5",
+  easeOutBack: "from-rose-500/30 to-rose-500/5",
+  bounce: "from-emerald-500/30 to-emerald-500/5",
+  elastic: "from-teal-500/30 to-teal-500/5",
 };
 
 interface TimelineTrackRowProps {
@@ -20,75 +21,96 @@ interface TimelineTrackRowProps {
   times: number[];
   easings: Map<number, KeyframeEasingId>;
   duration: number;
-  selectedTime: number | null;
-  isSelectedBone: boolean;
-  onSelectKeyframe: (time: number) => void;
+  contentWidth: number;
+  pixelsPerSecond: number;
+  fps: number;
+  isKeyframeSelected: (time: number) => boolean;
+  onSelectKeyframe: (time: number, modifiers: { ctrl: boolean; shift: boolean }) => void;
   onMoveKeyframe: (oldTime: number, newTime: number) => void;
   onDeleteKeyframe: (time: number) => void;
-  onSelectBone: () => void;
-  onRemoveTrack: () => void;
 }
 
 export function TimelineTrackRow({
-  boneName,
   times,
   easings,
   duration,
-  selectedTime,
-  isSelectedBone,
+  contentWidth,
+  pixelsPerSecond,
+  fps,
+  isKeyframeSelected,
   onSelectKeyframe,
   onMoveKeyframe,
   onDeleteKeyframe,
-  onSelectBone,
-  onRemoveTrack,
 }: TimelineTrackRowProps) {
   const sorted = [...times].sort((a, b) => a - b);
 
   return (
-    <div className="flex h-8 flex-shrink-0 items-center gap-2">
+    <div className="relative border-b border-border/30" style={{ height: TIMELINE_ROW_HEIGHT, width: contentWidth }}>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.02] to-transparent" />
+
+      {sorted.map((t, i) => {
+        const next = sorted[i + 1];
+        if (next === undefined) return null;
+        const left = timeToPx(t, pixelsPerSecond);
+        const width = timeToPx(next, pixelsPerSecond) - left;
+        const easing = easings.get(t) ?? "linear";
+        return (
+          <div
+            key={`seg-${t}-${next}`}
+            className={cn("pointer-events-none absolute inset-y-2 rounded-md bg-gradient-to-r opacity-80", SEGMENT_COLORS[easing])}
+            style={{ left, width: Math.max(width, 2) }}
+          />
+        );
+      })}
+
+      {sorted.map((t) => (
+        <TimelineKeyframe
+          key={t}
+          time={t}
+          pixelsPerSecond={pixelsPerSecond}
+          duration={duration}
+          fps={fps}
+          selected={isKeyframeSelected(t)}
+          easing={easings.get(t) ?? "linear"}
+          onSelect={(mod) => onSelectKeyframe(t, mod)}
+          onCommitMove={(newTime) => onMoveKeyframe(t, newTime)}
+          onDelete={() => onDeleteKeyframe(t)}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function TimelineTrackLabel({
+  boneName,
+  isSelectedBone,
+  onSelectBone,
+  onRemoveTrack,
+}: {
+  boneName: string;
+  isSelectedBone: boolean;
+  onSelectBone: () => void;
+  onRemoveTrack: () => void;
+}) {
+  return (
+    <div
+      className="group flex flex-shrink-0 items-center gap-1 border-b border-border/30 border-r border-border/40 bg-card/50 px-2"
+      style={{ height: TIMELINE_ROW_HEIGHT, width: TIMELINE_LABEL_WIDTH }}
+    >
       <button
         onClick={onSelectBone}
         title={boneName}
         className={cn(
-          "w-32 flex-shrink-0 truncate rounded px-1.5 text-left text-[11px] font-medium hover:text-foreground",
+          "min-w-0 flex-1 truncate text-left text-[11px] font-medium transition-colors hover:text-foreground",
           isSelectedBone ? "text-primary" : "text-foreground-muted"
         )}
       >
         {boneName}
       </button>
-      <div className="relative h-5 flex-1 rounded-full bg-background-subtle">
-        {sorted.map((t, i) => {
-          const next = sorted[i + 1];
-          if (next === undefined) return null;
-          const left = duration > 0 ? (t / duration) * 100 : 0;
-          const width = duration > 0 ? ((next - t) / duration) * 100 : 0;
-          const easing = easings.get(t) ?? "linear";
-          return (
-            <div
-              key={`seg-${t}-${next}`}
-              className={cn("pointer-events-none absolute top-1/2 h-1 -translate-y-1/2 rounded-full", SEGMENT_COLORS[easing])}
-              style={{ left: `${left}%`, width: `${width}%` }}
-              title={`${easing} → next keyframe`}
-            />
-          );
-        })}
-        {sorted.map((t) => (
-          <KeyframeDiamond
-            key={t}
-            time={t}
-            duration={duration}
-            selected={selectedTime === t}
-            easing={easings.get(t) ?? "linear"}
-            onSelect={() => onSelectKeyframe(t)}
-            onCommitMove={(newTime) => onMoveKeyframe(t, newTime)}
-            onDelete={() => onDeleteKeyframe(t)}
-          />
-        ))}
-      </div>
       <button
         onClick={onRemoveTrack}
-        className="flex-shrink-0 text-foreground-muted hover:text-danger"
-        title="Remove all keyframes for this bone"
+        className="flex-shrink-0 rounded p-0.5 text-foreground-muted opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+        title="Delete all keyframes on this bone"
       >
         <Trash2 className="h-3 w-3" />
       </button>

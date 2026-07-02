@@ -15,6 +15,11 @@ interface AnimationState {
   activeClipId: string | null;
   isPlaying: boolean;
   loop: boolean;
+  loopInRange: boolean;
+  playRangeStart: number;
+  playRangeEnd: number;
+  timelineZoom: number;
+  timelineSelectedKeyframeCount: number;
   speed: number;
   currentTime: number;
   duration: number;
@@ -35,7 +40,14 @@ interface AnimationState {
   togglePlay: () => void;
   stop: () => void;
   toggleLoop: () => void;
+  toggleLoopInRange: () => void;
   setLoop: (loop: boolean) => void;
+  setPlayRange: (start: number, end: number) => void;
+  setPlayRangeStart: (time: number) => void;
+  setPlayRangeEnd: (time: number) => void;
+  resetPlayRange: () => void;
+  setTimelineZoom: (pixelsPerSecond: number) => void;
+  setTimelineSelectedKeyframeCount: (count: number) => void;
   setSpeed: (speed: number) => void;
   seek: (time: number) => void;
   setCurrentTimeFromEngine: (time: number) => void;
@@ -58,6 +70,11 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   activeClipId: null,
   isPlaying: false,
   loop: true,
+  loopInRange: true,
+  playRangeStart: 0,
+  playRangeEnd: 0,
+  timelineZoom: 80,
+  timelineSelectedKeyframeCount: 0,
   speed: 1,
   currentTime: 0,
   duration: 0,
@@ -75,6 +92,8 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
       isPlaying: false,
       currentTime: 0,
       duration: 0,
+      playRangeStart: 0,
+      playRangeEnd: 0,
       undoStack: [],
       redoStack: [],
     });
@@ -110,8 +129,16 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
 
   setActiveClipId: (id) => {
     const clip = get().clips.find((c) => c.id === id);
+    const dur = clip?.duration ?? 0;
     applyActiveClipToEngine(clip, get().loop);
-    set({ activeClipId: id, isPlaying: false, currentTime: 0, duration: clip?.duration ?? 0 });
+    set({
+      activeClipId: id,
+      isPlaying: false,
+      currentTime: 0,
+      duration: dur,
+      playRangeStart: 0,
+      playRangeEnd: dur,
+    });
   },
 
   updateCustomClipData: (id, updater, record = true) => {
@@ -132,6 +159,7 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
       undoStack: record ? [...s.undoStack, { clipId: id, data: before }].slice(-50) : s.undoStack,
       redoStack: record ? [] : s.redoStack,
       duration: wasActive ? nextData.duration : s.duration,
+      playRangeEnd: wasActive ? Math.min(s.playRangeEnd || nextData.duration, nextData.duration) : s.playRangeEnd,
     }));
 
     if (wasActive && engine) {
@@ -141,6 +169,11 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   },
 
   play: () => {
+    const { playRangeStart, playRangeEnd, currentTime, duration, seek } = get();
+    const end = playRangeEnd > 0 ? playRangeEnd : duration;
+    if (currentTime < playRangeStart || currentTime >= end - 0.0001) {
+      seek(playRangeStart);
+    }
     useModelStore.getState().engine?.play();
     set({ isPlaying: true });
   },
@@ -151,19 +184,45 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   togglePlay: () => (get().isPlaying ? get().pause() : get().play()),
   stop: () => {
     const engine = useModelStore.getState().engine;
+    const start = get().playRangeStart;
     engine?.pause();
-    engine?.seek(0);
-    set({ isPlaying: false, currentTime: 0 });
+    engine?.seek(start);
+    set({ isPlaying: false, currentTime: start });
   },
   toggleLoop: () => {
     const loop = !get().loop;
     useModelStore.getState().engine?.setLoop(loop);
     set({ loop });
   },
+  toggleLoopInRange: () => set((s) => ({ loopInRange: !s.loopInRange })),
   setLoop: (loop) => {
     useModelStore.getState().engine?.setLoop(loop);
     set({ loop });
   },
+  setPlayRange: (start, end) => {
+    const duration = get().duration;
+    const a = Math.max(0, Math.min(start, duration));
+    const b = Math.max(a + 0.05, Math.min(end, duration));
+    set({ playRangeStart: a, playRangeEnd: b });
+  },
+  setPlayRangeStart: (time) => {
+    const { duration, playRangeEnd } = get();
+    const start = Math.max(0, Math.min(time, (playRangeEnd || duration) - 0.05));
+    set({ playRangeStart: start });
+  },
+  setPlayRangeEnd: (time) => {
+    const { playRangeStart, duration } = get();
+    const end = Math.max(playRangeStart + 0.05, Math.min(time, duration));
+    set({ playRangeEnd: end });
+  },
+  resetPlayRange: () => {
+    const duration = get().duration;
+    set({ playRangeStart: 0, playRangeEnd: duration });
+  },
+  setTimelineZoom: (pixelsPerSecond) => {
+    set({ timelineZoom: Math.max(24, Math.min(240, pixelsPerSecond)) });
+  },
+  setTimelineSelectedKeyframeCount: (count) => set({ timelineSelectedKeyframeCount: count }),
   setSpeed: (speed) => {
     useModelStore.getState().engine?.setSpeed(speed);
     set({ speed });

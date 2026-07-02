@@ -108,6 +108,7 @@ export function AppShell() {
         mirrorSelectedBonesOnX();
       } else if (e.key === "Delete" || e.key === "Backspace") {
         if (mod) return;
+        if (useAnimationStore.getState().timelineSelectedKeyframeCount > 0) return;
         e.preventDefault();
         deleteKeyframesAtPlayheadForSelection();
       } else if (mod && e.shiftKey && e.key.toLowerCase() === "i") {
@@ -127,8 +128,8 @@ export function AppShell() {
   }, [setTransformMode, togglePlay, stepFrame, toggleGizmoSpace, clearBoneSelection, selectAllBones, undo, redo]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden p-2 sm:gap-4 sm:p-4">
-      <div className="flex min-h-0 flex-1 gap-2 sm:gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden p-2 sm:gap-3 sm:p-4">
+      <div className="flex min-h-0 flex-[1.15] gap-2 sm:gap-4">
         <aside className="flex w-64 flex-shrink-0 flex-col gap-2 sm:w-72 sm:gap-4">
           <div className="min-h-0 flex-[1.3]">
             <BoneTreePanel />
@@ -152,8 +153,10 @@ export function AppShell() {
         </aside>
       </div>
 
-      <div className="flex h-52 flex-shrink-0 flex-col sm:h-56">
-        <TimelinePanel />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1">
+          <TimelinePanel />
+        </div>
         <StatusBar />
       </div>
     </div>

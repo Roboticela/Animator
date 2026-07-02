@@ -208,6 +208,59 @@ export function deleteBoneKeyframe(clip: CustomClipData, boneName: string, time:
     .filter((t) => t.keyframes.length > 0);
   return deletePoseEasing({ ...clip, tracks: nextTracks }, boneName, time);
 }
+
+export interface BoneKeyframeRef {
+  boneName: string;
+  time: number;
+}
+
+/** All unique bone pose keyframes in the clip. */
+export function getAllBoneKeyframeRefs(clip: CustomClipData): BoneKeyframeRef[] {
+  const map = new Map<string, BoneKeyframeRef>();
+  for (const track of clip.tracks) {
+    for (const k of track.keyframes) {
+      const t = timeKey(k.time);
+      const id = `${track.boneName}|${t}`;
+      if (!map.has(id)) map.set(id, { boneName: track.boneName, time: t });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.time - b.time || a.boneName.localeCompare(b.boneName));
+}
+
+export function deleteBoneKeyframes(clip: CustomClipData, refs: BoneKeyframeRef[]): CustomClipData {
+  let next = clip;
+  for (const ref of refs) {
+    next = deleteBoneKeyframe(next, ref.boneName, ref.time);
+  }
+  return next;
+}
+
+export function moveBoneKeyframes(
+  clip: CustomClipData,
+  moves: { boneName: string; oldTime: number; newTime: number }[]
+): CustomClipData {
+  let next = clip;
+  for (const { boneName, oldTime, newTime } of moves) {
+    next = moveBoneKeyframe(next, boneName, oldTime, newTime);
+  }
+  return next;
+}
+
+export function setClipDuration(clip: CustomClipData, duration: number): CustomClipData {
+  const nextDuration = Math.max(0.1, duration);
+  const epsilon = 1 / (clip.fps * 2);
+  const tracks = clip.tracks
+    .map((t) => ({
+      ...t,
+      keyframes: t.keyframes
+        .filter((k) => k.time <= nextDuration + epsilon)
+        .map((k) => ({ ...k, time: Math.min(k.time, nextDuration) })),
+    }))
+    .filter((t) => t.keyframes.length > 0);
+  const poseEasings = (clip.poseEasings ?? []).filter((e) => e.time <= nextDuration + epsilon);
+  return { ...clip, duration: nextDuration, tracks, poseEasings };
+}
+
 /** Converts the app's editable per-bone keyframe data into a playable THREE.AnimationClip. */
 export function buildClipFromData(data: CustomClipData): THREE.AnimationClip {
   const tracks = bakeTracksFromClipData(data);
