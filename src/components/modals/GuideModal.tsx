@@ -15,7 +15,7 @@ const STEPS = [
   {
     icon: Spline,
     title: "2. Inspect the armature",
-    body: "The Armatures & Bones panel lists every bone. Click one (or click a joint in the viewport) to select it — the gizmo appears on the selected bone.",
+    body: "The Armatures & Bones panel lists every bone. Click to select; Ctrl+click to add/remove; Shift+click for a range. Select multiple bones to transform or keyframe them together.",
   },
   {
     icon: Clapperboard,
@@ -25,7 +25,7 @@ const STEPS = [
   {
     icon: Diamond,
     title: "4. Hand-author your own clip",
-    body: "Create a Custom clip, pose a bone with the Move/Rotate/Scale gizmo, then click \"Set Keyframe\" to record that pose at the playhead.",
+    body: "Create a Custom clip, pose selected bones with the Move/Rotate/Scale gizmo (W/E/R), then press K or click \"Set Keyframe\" to record poses at the playhead.",
   },
   {
     icon: FileDown,
@@ -55,6 +55,9 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
             </div>
           </div>
         ))}
+        <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-xs leading-relaxed text-foreground/55">
+          <span className="font-semibold text-foreground">Shortcuts:</span> W/E/R move/rotate/scale • Space play/pause • K keyframe • F frame model • G grid • L lights • H shadows • Home reset bone • Ctrl+A select all • Ctrl+D deselect • Escape clear • Ctrl+Z/Y undo/redo
+        </div>
         <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-xs leading-relaxed text-foreground/55">
           <span className="font-semibold text-foreground">Note:</span> Premade animations use bone-name heuristics — unusual rig names may only animate partially. Exports are always saved as .glb.
         </div>

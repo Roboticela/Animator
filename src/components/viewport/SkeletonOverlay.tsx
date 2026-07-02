@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { useModelStore } from "@/store/modelStore";
+import { pickBoneFromClick, useModelStore } from "@/store/modelStore";
 import type { BoneInfo } from "@/types/model";
 
 const dummy = new THREE.Object3D();
@@ -10,10 +10,12 @@ const JOINT_COLOR = new THREE.Color("#38bdf8");
 export function SkeletonOverlay() {
   const model = useModelStore((s) => s.model);
   const showSkeleton = useModelStore((s) => s.showSkeleton);
-  const selectedBoneName = useModelStore((s) => s.selectedBoneName);
-  const selectBone = useModelStore((s) => s.selectBone);
+  const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
+  const pickBone = useModelStore((s) => s.pickBone);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
   const jointRadius = Math.max(sceneRadius * 0.016, 0.008);
+
+  const selectedSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
 
   const bones: BoneInfo[] = useMemo(() => (model ? model.skeletonGroups.flatMap((g) => g.bones) : []), [model]);
   const byUuid = useMemo(() => new Map(bones.map((b) => [b.uuid, b])), [bones]);
@@ -21,7 +23,7 @@ export function SkeletonOverlay() {
 
   const jointsRef = useRef<THREE.InstancedMesh>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
-  const highlightRef = useRef<THREE.Mesh>(null);
+  const highlightsRef = useRef<THREE.InstancedMesh>(null);
 
   const lineGeometry = useMemo(() => {
     const geom = new THREE.BufferGeometry();
@@ -40,7 +42,7 @@ export function SkeletonOverlay() {
       bones.forEach((info, i) => {
         info.bone.getWorldPosition(worldPos);
         dummy.position.copy(worldPos);
-        dummy.scale.setScalar(info.name === selectedBoneName ? 1.7 : 1);
+        dummy.scale.setScalar(selectedSet.has(info.name) ? 1.7 : 1);
         dummy.updateMatrix();
         jointsRef.current!.setMatrixAt(i, dummy.matrix);
       });
@@ -59,15 +61,18 @@ export function SkeletonOverlay() {
       posAttr.needsUpdate = true;
     }
 
-    if (highlightRef.current) {
-      const selected = selectedBoneName ? bones.find((b) => b.name === selectedBoneName) : null;
-      if (selected) {
-        highlightRef.current.visible = true;
-        selected.bone.getWorldPosition(worldPos);
-        highlightRef.current.position.copy(worldPos);
-      } else {
-        highlightRef.current.visible = false;
-      }
+    if (highlightsRef.current) {
+      const selectedBones = bones.filter((b) => selectedSet.has(b.name));
+      highlightsRef.current.count = selectedBones.length;
+      highlightsRef.current.visible = selectedBones.length > 0;
+      selectedBones.forEach((info, i) => {
+        info.bone.getWorldPosition(worldPos);
+        dummy.position.copy(worldPos);
+        dummy.scale.setScalar(1);
+        dummy.updateMatrix();
+        highlightsRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      highlightsRef.current.instanceMatrix.needsUpdate = true;
     }
   });
 
@@ -77,7 +82,9 @@ export function SkeletonOverlay() {
     e.stopPropagation();
     if (e.instanceId === undefined) return;
     const info = bones[e.instanceId];
-    if (info) selectBone(info.name);
+    if (!info) return;
+
+    pickBoneFromClick(pickBone, info.name, selectedBoneNames, e.nativeEvent);
   };
 
   return (
@@ -89,10 +96,10 @@ export function SkeletonOverlay() {
         <sphereGeometry args={[jointRadius, 10, 10]} />
         <meshBasicMaterial color={JOINT_COLOR} depthTest={false} transparent opacity={0.95} />
       </instancedMesh>
-      <mesh ref={highlightRef} visible={false}>
+      <instancedMesh ref={highlightsRef} args={[undefined, undefined, Math.max(bones.length, 1)]} frustumCulled={false}>
         <sphereGeometry args={[jointRadius * 1.5, 12, 12]} />
         <meshBasicMaterial color="#f97316" depthTest={false} />
-      </mesh>
+      </instancedMesh>
     </group>
   );
 }

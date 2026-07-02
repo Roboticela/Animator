@@ -19,6 +19,7 @@ interface AnimationState {
   currentTime: number;
   duration: number;
   transformMode: TransformMode;
+  gizmoSpace: "local" | "world";
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
 
@@ -39,6 +40,8 @@ interface AnimationState {
   setCurrentTimeFromEngine: (time: number) => void;
 
   setTransformMode: (mode: TransformMode) => void;
+  toggleGizmoSpace: () => void;
+  stepFrame: (direction: -1 | 1) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -58,6 +61,7 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   currentTime: 0,
   duration: 0,
   transformMode: "rotate",
+  gizmoSpace: "local",
   undoStack: [],
   redoStack: [],
 
@@ -166,6 +170,17 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   setCurrentTimeFromEngine: (time) => set({ currentTime: time }),
 
   setTransformMode: (mode) => set({ transformMode: mode }),
+
+  toggleGizmoSpace: () => set((s) => ({ gizmoSpace: s.gizmoSpace === "local" ? "world" : "local" })),
+
+  stepFrame: (direction) => {
+    const { activeClipId, clips, currentTime, duration, seek } = get();
+    const clip = clips.find((c) => c.id === activeClipId);
+    const fps = clip?.editable?.fps ?? 30;
+    const step = 1 / fps;
+    const next = Math.max(0, Math.min(duration || clip?.duration || 0, currentTime + direction * step));
+    seek(next);
+  },
 
   undo: () => {
     const { undoStack } = get();

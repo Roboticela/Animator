@@ -2,16 +2,18 @@ import { useMemo, useState } from "react";
 import { GitBranch, Search, X } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
-import { useModelStore } from "@/store/modelStore";
+import { pickBoneFromClick, useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { boneHasKeyframes } from "@/lib/clip-builder";
 
 export function BoneTreePanel() {
   const model = useModelStore((s) => s.model);
-  const selectedBoneName = useModelStore((s) => s.selectedBoneName);
-  const selectBone = useModelStore((s) => s.selectBone);
+  const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
+  const pickBone = useModelStore((s) => s.pickBone);
   const activeClip = useAnimationStore((s) => s.clips.find((c) => c.id === s.activeClipId));
   const [query, setQuery] = useState("");
+
+  const selectedSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
 
   const groups = useMemo(() => model?.skeletonGroups ?? [], [model]);
   const totalBones = useMemo(() => groups.reduce((n, g) => n + g.bones.length, 0), [groups]);
@@ -25,7 +27,7 @@ export function BoneTreePanel() {
           <Search className="h-3.5 w-3.5 text-foreground-muted" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(ev) => setQuery(ev.target.value)}
             placeholder="Search bones..."
             className="h-full min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-foreground-muted"
           />
@@ -35,10 +37,15 @@ export function BoneTreePanel() {
             </button>
           )}
         </div>
-        <div className="text-[11px] text-foreground-muted">
+        <div className="text-[11px] leading-relaxed text-foreground-muted">
           {groups.length === 0
             ? "No armature found in this file."
             : `${groups.length} armature${groups.length > 1 ? "s" : ""} • ${totalBones} bones`}
+          {groups.length > 0 && (
+            <span className="block text-[10px] text-foreground/40">
+              Ctrl+click toggle • Shift+click range • Ctrl+A all
+            </span>
+          )}
         </div>
       </div>
 
@@ -62,12 +69,12 @@ export function BoneTreePanel() {
                 {group.rootName}
               </div>
               {visibleBones.map((info) => {
-                const isSelected = info.name === selectedBoneName;
+                const isSelected = selectedSet.has(info.name);
                 const keyed = activeClip?.editable ? boneHasKeyframes(activeClip.editable, info.name) : false;
                 return (
                   <button
                     key={info.uuid}
-                    onClick={() => selectBone(isSelected ? null : info.name)}
+                    onClick={(e) => pickBoneFromClick(pickBone, info.name, selectedBoneNames, e)}
                     style={{ paddingLeft: query ? 8 : 8 + info.depth * 14 }}
                     className={cn(
                       "flex w-full items-center gap-1.5 rounded-md py-1 pr-2 text-left text-xs transition-colors",

@@ -2,7 +2,8 @@ import type { ClipMeta, ModelData } from "@/types/model";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { buildProceduralClip, PROCEDURAL_ANIMATIONS, type ProceduralAnimationId } from "@/lib/procedural-animations";
-import { buildClipFromData, clipToCustomData, createEmptyCustomClip, nextClipId } from "@/lib/clip-builder";
+import { buildClipFromData, captureBoneTransform, clipToCustomData, createEmptyCustomClip, nextClipId, upsertKeyframe } from "@/lib/clip-builder";
+import { copyBoneTransforms, mirrorBonesOnX, pasteBoneTransforms } from "@/lib/bone-clipboard";
 
 let clipIdCounter = 0;
 function embeddedClipId() {
@@ -76,4 +77,58 @@ export function duplicateCustomClip(source: ClipMeta) {
   const meta: ClipMeta = { id: data.id, name: data.name, source: "custom", duration: data.duration, clip, editable: data };
   useAnimationStore.getState().addClip(meta, true);
   return meta;
+}
+
+/** Record keyframes at the playhead for every currently selected bone. */
+export function setKeyframesForSelection(): boolean {
+  const { boneMap, selectedBoneNames } = useModelStore.getState();
+  const { clips, activeClipId, currentTime, updateCustomClipData } = useAnimationStore.getState();
+  const activeClip = clips.find((c) => c.id === activeClipId);
+  if (!activeClip?.editable || activeClip.source !== "custom") return false;
+  if (selectedBoneNames.length === 0) return false;
+
+  const clipId = activeClip.id;
+  updateCustomClipData(clipId, (data) => {
+    let next = data;
+    for (const name of selectedBoneNames) {
+      const bone = boneMap.get(name)?.bone;
+      if (!bone) continue;
+      (["position", "quaternion", "scale"] as const).forEach((prop) => {
+        next = upsertKeyframe(next, bone.name, prop, currentTime, captureBoneTransform(bone, prop));
+      });
+    }
+    return next;
+  });
+  return true;
+}
+
+/** Reset selected bones to bind pose. */
+export function resetSelectedBones() {
+  const { boneMap, restPose, selectedBoneNames } = useModelStore.getState();
+  for (const name of selectedBoneNames) {
+    const bone = boneMap.get(name)?.bone;
+    const rest = restPose.get(name);
+    if (!bone || !rest) continue;
+    bone.position.fromArray(rest.position);
+    bone.quaternion.fromArray(rest.quaternion);
+    bone.scale.fromArray(rest.scale);
+  }
+}
+
+export function copySelectedBoneTransforms(): number {
+  const { boneMap, selectedBoneNames } = useModelStore.getState();
+  const bones = selectedBoneNames.map((n) => boneMap.get(n)?.bone).filter(Boolean) as import("three").Bone[];
+  return copyBoneTransforms(bones);
+}
+
+export function pasteSelectedBoneTransforms(): number {
+  const { boneMap, selectedBoneNames } = useModelStore.getState();
+  const bones = selectedBoneNames.map((n) => boneMap.get(n)?.bone).filter(Boolean) as import("three").Bone[];
+  return pasteBoneTransforms(bones);
+}
+
+export function mirrorSelectedBonesOnX(): void {
+  const { boneMap, selectedBoneNames } = useModelStore.getState();
+  const bones = selectedBoneNames.map((n) => boneMap.get(n)?.bone).filter(Boolean) as import("three").Bone[];
+  mirrorBonesOnX(bones);
 }

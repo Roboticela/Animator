@@ -17,8 +17,9 @@ export function TimelinePanel() {
   const currentTime = useAnimationStore((s) => s.currentTime);
   const duration = useAnimationStore((s) => s.duration);
   const updateCustomClipData = useAnimationStore((s) => s.updateCustomClipData);
-  const selectBone = useModelStore((s) => s.selectBone);
-  const selectedBoneName = useModelStore((s) => s.selectedBoneName);
+  const pickBone = useModelStore((s) => s.pickBone);
+  const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
+  const selectedSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
 
   const [selectedKeyframe, setSelectedKeyframe] = useState<{ bone: string; time: number } | null>(null);
 
@@ -42,7 +43,7 @@ export function TimelinePanel() {
 
   const handleSelectKeyframe = (bone: string, time: number) => {
     setSelectedKeyframe({ bone, time });
-    selectBone(bone);
+    pickBone(bone);
     seek(time);
   };
 
@@ -106,8 +107,8 @@ export function TimelinePanel() {
               duration={duration || activeClip.duration}
               times={activeClip.editable ? getBoneKeyframeTimes(activeClip.editable, bone) : []}
               selectedTime={selectedKeyframe?.bone === bone ? selectedKeyframe.time : null}
-              isSelectedBone={selectedBoneName === bone}
-              onSelectBone={() => selectBone(bone)}
+              isSelectedBone={selectedSet.has(bone)}
+              onSelectBone={() => pickBone(bone)}
               onSelectKeyframe={(time) => handleSelectKeyframe(bone, time)}
               onMoveKeyframe={(oldTime, newTime) => handleMoveKeyframe(bone, oldTime, newTime)}
               onDeleteKeyframe={(time) => handleDeleteKeyframe(bone, time)}

@@ -98,6 +98,9 @@
   --secondary: #f59e0b;
   --danger: #f87171;
   --success: #34d399;
+  --viewport-bg: var(--background);
+  --viewport-grid-cell: color-mix(in srgb, var(--border) 50%, transparent);
+  --viewport-grid-section: color-mix(in srgb, var(--border) 85%, var(--primary) 15%);
 }
 
 @theme inline {
