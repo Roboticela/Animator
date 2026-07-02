@@ -9,6 +9,7 @@ import {
   FileUp,
   FileX2,
   Info,
+  Keyboard,
   LifeBuoy,
   Loader2,
   Menu,
@@ -35,6 +36,7 @@ import { openLink } from "@/lib/tauri";
 import { GuideModal } from "@/components/modals/GuideModal";
 import { AboutModal } from "@/components/modals/AboutModal";
 import { ExportModal } from "@/components/modals/ExportModal";
+import { ShortcutsModal } from "@/components/modals/ShortcutsModal";
 import { cn } from "@/lib/utils";
 
 const ROBOTICELA_SITE_URL = "https://roboticela.com";
@@ -49,6 +51,7 @@ export function AppHeader() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const currentTheme = THEMES.find((t) => t.name === theme);
 
@@ -202,6 +205,12 @@ export function AppHeader() {
                     <span>Guide</span>
                   </DropdownMenuItem>
                 </motion.div>
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setShortcutsOpen(true)}>
+                    <Keyboard className="h-4 w-4" />
+                    <span>Keyboard Shortcuts</span>
+                  </DropdownMenuItem>
+                </motion.div>
               </AnimatePresence>
 
               <DropdownMenuSeparator />
@@ -240,6 +249,7 @@ export function AppHeader() {
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ExportModal isOpen={exportOpen} onClose={() => setExportOpen(false)} />
+      <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </>
   );
 }

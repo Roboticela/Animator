@@ -1,5 +1,5 @@
-import { Pause, Play, Redo2, Repeat, SkipBack, Undo2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { ChevronLeft, ChevronRight, Pause, Play, Redo2, Repeat, SkipBack, Undo2 } from "lucide-react";
+import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { cn } from "@/lib/utils";
 import { useAnimationStore } from "@/store/animationStore";
 
@@ -25,6 +25,7 @@ export function TransportControls() {
   const setSpeed = useAnimationStore((s) => s.setSpeed);
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
+  const stepFrame = useAnimationStore((s) => s.stepFrame);
 
   const disabled = !activeClipId;
 
@@ -35,36 +36,42 @@ export function TransportControls() {
 
   return (
     <div className="flex flex-shrink-0 items-center gap-1.5">
-      <Button variant="ghost" size="icon" disabled={disabled} title="Stop / rewind" onClick={stop}>
+      <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Stop / rewind" onPress={() => stop()}>
         <SkipBack className="h-4 w-4" />
-      </Button>
-      <Button variant="default" size="icon" disabled={disabled} title="Play / pause (space)" onClick={togglePlay}>
+      </FeedbackButton>
+      <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Previous frame (←)" onPress={() => stepFrame(-1)}>
+        <ChevronLeft className="h-4 w-4" />
+      </FeedbackButton>
+      <FeedbackButton variant="default" size="icon" disabled={disabled} title="Play / pause (space)" onPress={() => togglePlay()}>
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-      </Button>
-      <Button
+      </FeedbackButton>
+      <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Next frame (→)" onPress={() => stepFrame(1)}>
+        <ChevronRight className="h-4 w-4" />
+      </FeedbackButton>
+      <FeedbackButton
         variant={loop ? "default" : "ghost"}
         size="icon"
         disabled={disabled}
         title="Toggle loop"
-        onClick={toggleLoop}
+        onPress={() => toggleLoop()}
       >
         <Repeat className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="sm" disabled={disabled} onClick={cycleSpeed} title="Playback speed" className="w-14 font-mono">
+      </FeedbackButton>
+      <FeedbackButton variant="ghost" size="sm" disabled={disabled} onPress={() => cycleSpeed()} title="Playback speed" className="w-14 font-mono">
         {speed}x
-      </Button>
+      </FeedbackButton>
       <span className="w-24 flex-shrink-0 font-mono text-xs text-foreground-muted">
         {formatTime(currentTime)} / {formatTime(duration)}
       </span>
 
       <div className="mx-1 h-6 w-px bg-border" />
 
-      <Button variant="ghost" size="icon" disabled={undoStack.length === 0} title="Undo (Ctrl+Z)" onClick={undo}>
+      <FeedbackButton variant="ghost" size="icon" disabled={undoStack.length === 0} title="Undo (Ctrl+Z)" onPress={() => undo()}>
         <Undo2 className={cn("h-4 w-4", undoStack.length === 0 && "opacity-40")} />
-      </Button>
-      <Button variant="ghost" size="icon" disabled={redoStack.length === 0} title="Redo (Ctrl+Y)" onClick={redo}>
+      </FeedbackButton>
+      <FeedbackButton variant="ghost" size="icon" disabled={redoStack.length === 0} title="Redo (Ctrl+Y)" onPress={() => redo()}>
         <Redo2 className={cn("h-4 w-4", redoStack.length === 0 && "opacity-40")} />
-      </Button>
+      </FeedbackButton>
     </div>
   );
 }

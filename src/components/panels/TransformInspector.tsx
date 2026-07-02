@@ -3,7 +3,7 @@ import type { Bone } from "three";
 import { Diamond, Move3d, RotateCcw } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { NumberInput } from "@/components/ui/NumberInput";
-import { Button } from "@/components/ui/Button";
+import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { useModelStore, getPrimaryBoneName } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { resetSelectedBones, setKeyframesForSelection } from "@/lib/app-actions";
@@ -71,14 +71,14 @@ export function TransformInspector() {
       title="Transform"
       icon={<Move3d className="h-3.5 w-3.5" />}
       actions={
-        <Button
+        <FeedbackButton
           variant="ghost"
           size="icon"
           title={multiSelect ? "Reset selected bones (Home)" : "Reset this bone (Home)"}
-          onClick={resetSelectedBones}
+          onPress={() => resetSelectedBones()}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-        </Button>
+        </FeedbackButton>
       }
     >
       {multiSelect ? (
@@ -120,11 +120,11 @@ export function TransformInspector() {
         onChange={(i, v) => applyToAll((b) => b.scale.setComponent(i, v))}
       />
 
-      <Button
+      <FeedbackButton
         variant={canKeyframe ? "default" : "outline"}
         size="sm"
         disabled={!canKeyframe}
-        onClick={() => setKeyframesForSelection()}
+        onPress={() => setKeyframesForSelection()}
         className="mt-3 w-full"
         title={
           canKeyframe
@@ -136,7 +136,7 @@ export function TransformInspector() {
       >
         <Diamond className="h-3.5 w-3.5" />
         {multiSelect ? `Set Keyframes (${selectedBoneNames.length})` : "Set Keyframe"}
-      </Button>
+      </FeedbackButton>
     </Panel>
   );
 }

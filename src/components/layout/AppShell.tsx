@@ -5,9 +5,17 @@ import { SceneInfoPanel } from "@/components/panels/SceneInfoPanel";
 import { TransformInspector } from "@/components/panels/TransformInspector";
 import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
 import { TimelinePanel } from "@/components/timeline/TimelinePanel";
+import { StatusBar } from "@/components/layout/StatusBar";
 import { useAnimationStore } from "@/store/animationStore";
 import { useModelStore } from "@/store/modelStore";
-import { resetSelectedBones, setKeyframesForSelection } from "@/lib/app-actions";
+import {
+  copySelectedBoneTransforms,
+  deleteKeyframesAtPlayheadForSelection,
+  mirrorSelectedBonesOnX,
+  pasteSelectedBoneTransforms,
+  resetSelectedBones,
+  setKeyframesForSelection,
+} from "@/lib/app-actions";
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -18,6 +26,8 @@ function isTypingTarget(target: EventTarget | null) {
 export function AppShell() {
   const setTransformMode = useAnimationStore((s) => s.setTransformMode);
   const togglePlay = useAnimationStore((s) => s.togglePlay);
+  const stepFrame = useAnimationStore((s) => s.stepFrame);
+  const toggleGizmoSpace = useAnimationStore((s) => s.toggleGizmoSpace);
   const clearBoneSelection = useModelStore((s) => s.clearBoneSelection);
   const selectAllBones = useModelStore((s) => s.selectAllBones);
   const undo = useAnimationStore((s) => s.undo);
@@ -38,6 +48,18 @@ export function AppShell() {
       if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         clearBoneSelection();
+        return;
+      }
+
+      if (mod && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        copySelectedBoneTransforms();
+        return;
+      }
+
+      if (mod && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        pasteSelectedBoneTransforms();
         return;
       }
 
@@ -69,21 +91,43 @@ export function AppShell() {
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         useModelStore.getState().requestFrameCamera();
+      } else if (e.key === ".") {
+        e.preventDefault();
+        useModelStore.getState().requestFrameSelection();
       } else if (e.key === "g" || e.key === "G") {
         useModelStore.getState().toggleGrid();
       } else if (e.key === "l" || e.key === "L") {
         useModelStore.getState().toggleLights();
       } else if (e.key === "h" || e.key === "H") {
         useModelStore.getState().toggleShadows();
+      } else if (e.key === "o" || e.key === "O") {
+        useModelStore.getState().toggleOrthographicCamera();
+      } else if (e.key === "x" || e.key === "X") {
+        toggleGizmoSpace();
+      } else if (e.key === "m" || e.key === "M") {
+        mirrorSelectedBonesOnX();
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        if (mod) return;
+        e.preventDefault();
+        deleteKeyframesAtPlayheadForSelection();
+      } else if (mod && e.shiftKey && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+        useModelStore.getState().invertBoneSelection();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        stepFrame(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        stepFrame(1);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setTransformMode, togglePlay, clearBoneSelection, selectAllBones, undo, redo]);
+  }, [setTransformMode, togglePlay, stepFrame, toggleGizmoSpace, clearBoneSelection, selectAllBones, undo, redo]);
 
   return (
-    <div className="flex h-full flex-col gap-2 overflow-hidden p-2 sm:gap-4 sm:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden p-2 sm:gap-4 sm:p-4">
       <div className="flex min-h-0 flex-1 gap-2 sm:gap-4">
         <aside className="flex w-64 flex-shrink-0 flex-col gap-2 sm:w-72 sm:gap-4">
           <div className="min-h-0 flex-[1.3]">
@@ -108,8 +152,9 @@ export function AppShell() {
         </aside>
       </div>
 
-      <div className="h-52 flex-shrink-0 sm:h-56">
+      <div className="flex h-52 flex-shrink-0 flex-col sm:h-56">
         <TimelinePanel />
+        <StatusBar />
       </div>
     </div>
   );

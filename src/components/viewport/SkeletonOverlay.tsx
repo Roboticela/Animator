@@ -13,13 +13,27 @@ export function SkeletonOverlay() {
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const pickBone = useModelStore((s) => s.pickBone);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
+  const isolateSelection = useModelStore((s) => s.isolateSelection);
   const jointRadius = Math.max(sceneRadius * 0.016, 0.008);
 
   const selectedSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
 
   const bones: BoneInfo[] = useMemo(() => (model ? model.skeletonGroups.flatMap((g) => g.bones) : []), [model]);
+
+  const displayBones = useMemo(() => {
+    if (isolateSelection && selectedBoneNames.length > 0) {
+      return bones.filter((b) => selectedSet.has(b.name));
+    }
+    return bones;
+  }, [bones, isolateSelection, selectedBoneNames.length, selectedSet]);
+
   const byUuid = useMemo(() => new Map(bones.map((b) => [b.uuid, b])), [bones]);
-  const boneLinks = useMemo(() => bones.filter((b) => b.parentUuid && byUuid.has(b.parentUuid)), [bones, byUuid]);
+  const boneLinks = useMemo(() => {
+    const links = bones.filter((b) => b.parentUuid && byUuid.has(b.parentUuid));
+    if (!isolateSelection || selectedBoneNames.length === 0) return links;
+    const vis = new Set(displayBones.map((b) => b.uuid));
+    return links.filter((b) => vis.has(b.uuid) && vis.has(b.parentUuid as string));
+  }, [bones, byUuid, displayBones, isolateSelection, selectedBoneNames.length]);
 
   const jointsRef = useRef<THREE.InstancedMesh>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
@@ -36,10 +50,10 @@ export function SkeletonOverlay() {
   const parentPos = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
-    if (!showSkeleton || bones.length === 0) return;
+    if (!showSkeleton || displayBones.length === 0) return;
 
     if (jointsRef.current) {
-      bones.forEach((info, i) => {
+      displayBones.forEach((info, i) => {
         info.bone.getWorldPosition(worldPos);
         dummy.position.copy(worldPos);
         dummy.scale.setScalar(selectedSet.has(info.name) ? 1.7 : 1);
@@ -62,7 +76,7 @@ export function SkeletonOverlay() {
     }
 
     if (highlightsRef.current) {
-      const selectedBones = bones.filter((b) => selectedSet.has(b.name));
+      const selectedBones = displayBones.filter((b) => selectedSet.has(b.name));
       highlightsRef.current.count = selectedBones.length;
       highlightsRef.current.visible = selectedBones.length > 0;
       selectedBones.forEach((info, i) => {
@@ -76,12 +90,12 @@ export function SkeletonOverlay() {
     }
   });
 
-  if (!model || !showSkeleton || bones.length === 0) return null;
+  if (!model || !showSkeleton || displayBones.length === 0) return null;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     if (e.instanceId === undefined) return;
-    const info = bones[e.instanceId];
+    const info = displayBones[e.instanceId];
     if (!info) return;
 
     pickBoneFromClick(pickBone, info.name, selectedBoneNames, e.nativeEvent);
@@ -92,11 +106,11 @@ export function SkeletonOverlay() {
       <lineSegments ref={linesRef} geometry={lineGeometry}>
         <lineBasicMaterial color="#facc15" depthTest={false} transparent opacity={0.85} />
       </lineSegments>
-      <instancedMesh ref={jointsRef} args={[undefined, undefined, bones.length]} onClick={handleClick}>
+      <instancedMesh ref={jointsRef} args={[undefined, undefined, Math.max(displayBones.length, 1)]} onClick={handleClick}>
         <sphereGeometry args={[jointRadius, 10, 10]} />
         <meshBasicMaterial color={JOINT_COLOR} depthTest={false} transparent opacity={0.95} />
       </instancedMesh>
-      <instancedMesh ref={highlightsRef} args={[undefined, undefined, Math.max(bones.length, 1)]} frustumCulled={false}>
+      <instancedMesh ref={highlightsRef} args={[undefined, undefined, Math.max(displayBones.length, 1)]} frustumCulled={false}>
         <sphereGeometry args={[jointRadius * 1.5, 12, 12]} />
         <meshBasicMaterial color="#f97316" depthTest={false} />
       </instancedMesh>

@@ -48,10 +48,28 @@ export interface ClipMeta {
 
 export type TransformProperty = "position" | "quaternion" | "scale";
 
+export type KeyframeEasingId =
+  | "linear"
+  | "easeIn"
+  | "easeOut"
+  | "easeInOut"
+  | "hold"
+  | "easeInBack"
+  | "easeOutBack"
+  | "bounce"
+  | "elastic";
+
 export interface Keyframe {
   id: string;
   time: number;
   value: number[];
+}
+
+/** Outgoing easing from this bone pose keyframe to the next one on the timeline. */
+export interface BonePoseEasing {
+  boneName: string;
+  time: number;
+  easing: KeyframeEasingId;
 }
 
 export interface BoneTrackData {
@@ -67,6 +85,8 @@ export interface CustomClipData {
   fps: number;
   loop: boolean;
   tracks: BoneTrackData[];
+  /** Per-pose outgoing easing (bone + time); defaults to linear when missing. */
+  poseEasings?: BonePoseEasing[];
 }
 
 export type BoneRole =

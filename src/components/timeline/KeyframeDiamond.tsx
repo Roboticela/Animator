@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { KeyframeEasingId } from "@/lib/keyframe-easing";
+import { KEYFRAME_EASING_COLORS } from "@/lib/keyframe-easing";
 
 interface KeyframeDiamondProps {
   time: number;
   duration: number;
   selected: boolean;
+  easing: KeyframeEasingId;
   onSelect: () => void;
   onCommitMove: (newTime: number) => void;
   onDelete: () => void;
 }
 
-export function KeyframeDiamond({ time, duration, selected, onSelect, onCommitMove, onDelete }: KeyframeDiamondProps) {
+export function KeyframeDiamond({ time, duration, selected, easing, onSelect, onCommitMove, onDelete }: KeyframeDiamondProps) {
   const [dragTime, setDragTime] = useState(time);
   const [dragging, setDragging] = useState(false);
 
@@ -52,11 +55,11 @@ export function KeyframeDiamond({ time, duration, selected, onSelect, onCommitMo
         e.stopPropagation();
         onDelete();
       }}
-      title={`t = ${displayTime.toFixed(2)}s — drag to move, double-click to delete`}
+      title={`t = ${displayTime.toFixed(2)}s — ${easing} — drag to move, double-click to delete`}
       style={{ left: `${pct * 100}%` }}
       className={cn(
         "absolute top-1/2 z-10 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 cursor-ew-resize border transition-colors",
-        selected ? "border-primary bg-primary" : "border-secondary bg-secondary/90 hover:bg-secondary"
+        selected ? "border-primary bg-primary ring-2 ring-primary/30" : KEYFRAME_EASING_COLORS[easing]
       )}
     />
   );

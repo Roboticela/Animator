@@ -2,12 +2,21 @@ import { useMemo, useState } from "react";
 import { Clapperboard, FilePenLine } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
+import { KeyframeEffectsBar } from "@/components/timeline/KeyframeEffectsBar";
 import { TransportControls } from "@/components/timeline/TransportControls";
 import { TimelineRuler } from "@/components/timeline/TimelineRuler";
 import { TimelineTrackRow } from "@/components/timeline/TimelineTrackRow";
 import { useAnimationStore } from "@/store/animationStore";
 import { useModelStore } from "@/store/modelStore";
-import { getAnimatedBoneNames, getBoneKeyframeTimes, moveBoneKeyframe, deleteBoneKeyframe, removeBoneTrack } from "@/lib/clip-builder";
+import {
+  getAnimatedBoneNames,
+  getBoneKeyframeEasings,
+  getBoneKeyframeTimes,
+  getPoseEasing,
+  moveBoneKeyframe,
+  deleteBoneKeyframe,
+  removeBoneTrack,
+} from "@/lib/clip-builder";
 import { duplicateClipAsCustom } from "@/lib/app-actions";
 
 export function TimelinePanel() {
@@ -64,6 +73,20 @@ export function TimelinePanel() {
     updateCustomClipData(activeClip.id, (data) => removeBoneTrack(data, bone));
   };
 
+  const selectedEasing =
+    selectedKeyframe && activeClip.editable
+      ? getPoseEasing(activeClip.editable, selectedKeyframe.bone, selectedKeyframe.time)
+      : null;
+
+  const selectedTimes =
+    selectedKeyframe && activeClip.editable
+      ? getBoneKeyframeTimes(activeClip.editable, selectedKeyframe.bone)
+      : [];
+  const selectedKeyframeIndex = selectedKeyframe
+    ? selectedTimes.findIndex((t) => Math.abs(t - selectedKeyframe.time) < 1e-4)
+    : -1;
+  const hasNextKeyframe = selectedKeyframeIndex >= 0 && selectedKeyframeIndex < selectedTimes.length - 1;
+
   return (
     <Panel
       title={`Timeline — ${activeClip.name}`}
@@ -83,6 +106,15 @@ export function TimelinePanel() {
         <TransportControls />
         <TimelineRuler duration={duration || activeClip.duration} currentTime={currentTime} onScrub={seek} />
       </div>
+
+      {isEditable && selectedKeyframe && selectedEasing && (
+        <KeyframeEffectsBar
+          boneName={selectedKeyframe.bone}
+          time={selectedKeyframe.time}
+          currentEasing={selectedEasing}
+          hasNextKeyframe={hasNextKeyframe}
+        />
+      )}
 
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
         {!isEditable && (
@@ -106,6 +138,7 @@ export function TimelinePanel() {
               boneName={bone}
               duration={duration || activeClip.duration}
               times={activeClip.editable ? getBoneKeyframeTimes(activeClip.editable, bone) : []}
+              easings={activeClip.editable ? getBoneKeyframeEasings(activeClip.editable, bone) : new Map()}
               selectedTime={selectedKeyframe?.bone === bone ? selectedKeyframe.time : null}
               isSelectedBone={selectedSet.has(bone)}
               onSelectBone={() => pickBone(bone)}

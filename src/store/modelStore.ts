@@ -36,6 +36,7 @@ interface ModelState {
   flatShading: boolean;
   doubleSided: boolean;
   isolateSelection: boolean;
+  showFps: boolean;
   frameCameraTick: number;
   frameSelectionTick: number;
   isLoading: boolean;
@@ -50,8 +51,10 @@ interface ModelState {
   /** Replace selection with an explicit list (tree order preserved). */
   setSelectedBones: (names: string[]) => void;
   selectAllBones: () => void;
+  invertBoneSelection: () => void;
   clearBoneSelection: () => void;
   captureRestPose: () => void;
+  centerModelOnGround: () => void;
   resetToRestPose: () => void;
   toggleWireframe: () => void;
   toggleSkeleton: () => void;
@@ -65,6 +68,7 @@ interface ModelState {
   toggleFlatShading: () => void;
   toggleDoubleSided: () => void;
   toggleIsolateSelection: () => void;
+  toggleShowFps: () => void;
   requestFrameCamera: () => void;
   requestFrameSelection: () => void;
 }
@@ -109,6 +113,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   flatShading: false,
   doubleSided: false,
   isolateSelection: false,
+  showFps: false,
   frameCameraTick: 0,
   frameSelectionTick: 0,
   isLoading: false,
@@ -197,9 +202,29 @@ export const useModelStore = create<ModelState>((set, get) => ({
     });
   },
 
+  invertBoneSelection: () => {
+    const { model, selectedBoneNames } = get();
+    if (!model) return;
+    const ordered = getOrderedBoneNames(model);
+    const selected = new Set(selectedBoneNames);
+    const inverted = ordered.filter((n) => !selected.has(n));
+    set({
+      selectedBoneNames: inverted,
+      selectionAnchorName: inverted[inverted.length - 1] ?? null,
+    });
+  },
+
   clearBoneSelection: () => set({ selectedBoneNames: [], selectionAnchorName: null }),
 
   captureRestPose: () => set({ restPose: captureRest(get().boneMap) }),
+
+  centerModelOnGround: () => {
+    const { model } = get();
+    if (!model) return;
+    const box = new THREE.Box3().setFromObject(model.object3D);
+    if (box.isEmpty()) return;
+    model.object3D.position.y += -box.min.y;
+  },
 
   resetToRestPose: () => {
     const { boneMap, restPose } = get();
@@ -224,6 +249,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   toggleFlatShading: () => set((s) => ({ flatShading: !s.flatShading })),
   toggleDoubleSided: () => set((s) => ({ doubleSided: !s.doubleSided })),
   toggleIsolateSelection: () => set((s) => ({ isolateSelection: !s.isolateSelection })),
+  toggleShowFps: () => set((s) => ({ showFps: !s.showFps })),
   requestFrameCamera: () => set((s) => ({ frameCameraTick: s.frameCameraTick + 1 })),
   requestFrameSelection: () => set((s) => ({ frameSelectionTick: s.frameSelectionTick + 1 })),
 }));

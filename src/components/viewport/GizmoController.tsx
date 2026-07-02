@@ -16,6 +16,7 @@ export function GizmoController() {
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
   const mode = useAnimationStore((s) => s.transformMode);
+  const gizmoSpace = useAnimationStore((s) => s.gizmoSpace);
   const pause = useAnimationStore((s) => s.pause);
 
   const primaryName = getPrimaryBoneName(selectedBoneNames);
@@ -100,7 +101,7 @@ export function GizmoController() {
       object={primaryBone}
       mode={mode}
       size={Math.min(Math.max(sceneRadius * 0.5, 0.4), 1.2)}
-      space="local"
+      space={gizmoSpace}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onObjectChange={syncSecondaryBones}

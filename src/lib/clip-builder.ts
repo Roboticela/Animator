@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import type { BoneTrackData, CustomClipData, Keyframe, TransformProperty } from "@/types/model";
+import type { BonePoseEasing, BoneTrackData, CustomClipData, Keyframe, KeyframeEasingId, TransformProperty } from "@/types/model";
+import { bakeTracksFromClipData } from "@/lib/keyframe-bake";
+import { DEFAULT_KEYFRAME_EASING } from "@/lib/keyframe-easing";
 
 let keyframeUid = 0;
 export function nextKeyframeId() {
@@ -14,7 +16,79 @@ export function nextClipId() {
 }
 
 export function createEmptyCustomClip(name: string, duration = 2, fps = 30): CustomClipData {
-  return { id: nextClipId(), name, duration, fps, loop: true, tracks: [] };
+  return { id: nextClipId(), name, duration, fps, loop: true, tracks: [], poseEasings: [] };
+}
+
+function timeKey(time: number) {
+  return Number(time.toFixed(4));
+}
+
+export function getPoseEasing(clip: CustomClipData, boneName: string, time: number): KeyframeEasingId {
+  const t = timeKey(time);
+  const entry = clip.poseEasings?.find((e) => e.boneName === boneName && timeKey(e.time) === t);
+  return entry?.easing ?? DEFAULT_KEYFRAME_EASING;
+}
+
+export function setPoseEasing(
+  clip: CustomClipData,
+  boneName: string,
+  time: number,
+  easing: KeyframeEasingId
+): CustomClipData {
+  const t = timeKey(time);
+  const rest = (clip.poseEasings ?? []).filter((e) => !(e.boneName === boneName && timeKey(e.time) === t));
+  const poseEasings: BonePoseEasing[] = [...rest, { boneName, time: t, easing }];
+  return { ...clip, poseEasings };
+}
+
+export function setPoseEasingForBones(
+  clip: CustomClipData,
+  boneNames: string[],
+  time: number,
+  easing: KeyframeEasingId
+): CustomClipData {
+  let next = clip;
+  for (const boneName of boneNames) {
+    next = setPoseEasing(next, boneName, time, easing);
+  }
+  return next;
+}
+
+function ensurePoseEasingEntry(clip: CustomClipData, boneName: string, time: number): CustomClipData {
+  const t = timeKey(time);
+  const exists = clip.poseEasings?.some((e) => e.boneName === boneName && timeKey(e.time) === t);
+  if (exists) return clip;
+  return setPoseEasing(clip, boneName, time, DEFAULT_KEYFRAME_EASING);
+}
+
+function movePoseEasing(clip: CustomClipData, boneName: string, oldTime: number, newTime: number): CustomClipData {
+  const easing = getPoseEasing(clip, boneName, oldTime);
+  const without = (clip.poseEasings ?? []).filter((e) => !(e.boneName === boneName && timeKey(e.time) === timeKey(oldTime)));
+  return { ...clip, poseEasings: [...without, { boneName, time: timeKey(newTime), easing }] };
+}
+
+function deletePoseEasing(clip: CustomClipData, boneName: string, time: number): CustomClipData {
+  const t = timeKey(time);
+  return {
+    ...clip,
+    poseEasings: (clip.poseEasings ?? []).filter((e) => !(e.boneName === boneName && timeKey(e.time) === t)),
+  };
+}
+
+function clearPoseEasingsForBone(clip: CustomClipData, boneName: string): CustomClipData {
+  return { ...clip, poseEasings: (clip.poseEasings ?? []).filter((e) => e.boneName !== boneName) };
+}
+
+export function ensureBonePoseEasing(clip: CustomClipData, boneName: string, time: number): CustomClipData {
+  return ensurePoseEasingEntry(clip, boneName, time);
+}
+
+export function getBoneKeyframeEasings(clip: CustomClipData, boneName: string): Map<number, KeyframeEasingId> {
+  const map = new Map<number, KeyframeEasingId>();
+  for (const t of getBoneKeyframeTimes(clip, boneName)) {
+    map.set(t, getPoseEasing(clip, boneName, t));
+  }
+  return map;
 }
 
 export function captureBoneTransform(bone: THREE.Object3D, property: TransformProperty): number[] {
@@ -89,7 +163,7 @@ export function moveKeyframe(
 }
 
 export function removeBoneTrack(clip: CustomClipData, boneName: string): CustomClipData {
-  return { ...clip, tracks: clip.tracks.filter((t) => t.boneName !== boneName) };
+  return clearPoseEasingsForBone({ ...clip, tracks: clip.tracks.filter((t) => t.boneName !== boneName) }, boneName);
 }
 
 /** Bone-level view: the app UI treats a "keyframe" as one pose snapshot for a bone, even though
@@ -121,7 +195,7 @@ export function moveBoneKeyframe(clip: CustomClipData, boneName: string, oldTime
       .sort((a, b) => a.time - b.time);
     return { ...t, keyframes };
   });
-  return { ...clip, tracks: nextTracks };
+  return movePoseEasing({ ...clip, tracks: nextTracks }, boneName, oldTime, clampedNew);
 }
 
 export function deleteBoneKeyframe(clip: CustomClipData, boneName: string, time: number): CustomClipData {
@@ -132,27 +206,11 @@ export function deleteBoneKeyframe(clip: CustomClipData, boneName: string, time:
       return { ...t, keyframes: t.keyframes.filter((k) => Math.abs(k.time - time) > epsilon) };
     })
     .filter((t) => t.keyframes.length > 0);
-  return { ...clip, tracks: nextTracks };
+  return deletePoseEasing({ ...clip, tracks: nextTracks }, boneName, time);
 }
-
 /** Converts the app's editable per-bone keyframe data into a playable THREE.AnimationClip. */
 export function buildClipFromData(data: CustomClipData): THREE.AnimationClip {
-  const tracks: THREE.KeyframeTrack[] = [];
-
-  for (const track of data.tracks) {
-    if (track.keyframes.length === 0) continue;
-    const sorted = [...track.keyframes].sort((a, b) => a.time - b.time);
-    const times = sorted.map((k) => k.time);
-    const values = sorted.flatMap((k) => k.value);
-    const trackName = `${track.boneName}.${track.property}`;
-
-    if (track.property === "quaternion") {
-      tracks.push(new THREE.QuaternionKeyframeTrack(trackName, times, values));
-    } else {
-      tracks.push(new THREE.VectorKeyframeTrack(trackName, times, values));
-    }
-  }
-
+  const tracks = bakeTracksFromClipData(data);
   return new THREE.AnimationClip(data.name, data.duration, tracks);
 }
 
@@ -182,5 +240,5 @@ export function clipToCustomData(clip: THREE.AnimationClip, name: string, fps = 
     })
     .filter((t): t is BoneTrackData => t !== null);
 
-  return { id: nextClipId(), name, duration: clip.duration, fps, loop: true, tracks };
+  return { id: nextClipId(), name, duration: clip.duration, fps, loop: true, tracks, poseEasings: [] };
 }

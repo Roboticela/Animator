@@ -35,6 +35,7 @@ interface AnimationState {
   togglePlay: () => void;
   stop: () => void;
   toggleLoop: () => void;
+  setLoop: (loop: boolean) => void;
   setSpeed: (speed: number) => void;
   seek: (time: number) => void;
   setCurrentTimeFromEngine: (time: number) => void;
@@ -156,6 +157,10 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   },
   toggleLoop: () => {
     const loop = !get().loop;
+    useModelStore.getState().engine?.setLoop(loop);
+    set({ loop });
+  },
+  setLoop: (loop) => {
     useModelStore.getState().engine?.setLoop(loop);
     set({ loop });
   },
