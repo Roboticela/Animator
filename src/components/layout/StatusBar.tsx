@@ -8,6 +8,22 @@ import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { useViewportFps } from "@/hooks/useViewportFps";
 
+const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 3, 4];
+const SPEED_MIN = 0.1;
+const SPEED_MAX = 4;
+
+function stepPlaybackSpeed(current: number, direction: -1 | 1) {
+  const idx = PLAYBACK_SPEEDS.findIndex((s) => Math.abs(s - current) < 0.01);
+  if (idx === -1) {
+    const next =
+      direction > 0
+        ? PLAYBACK_SPEEDS.find((s) => s > current) ?? PLAYBACK_SPEEDS[PLAYBACK_SPEEDS.length - 1]
+        : [...PLAYBACK_SPEEDS].reverse().find((s) => s < current) ?? PLAYBACK_SPEEDS[0];
+    return next;
+  }
+  return PLAYBACK_SPEEDS[Math.max(0, Math.min(PLAYBACK_SPEEDS.length - 1, idx + direction))];
+}
+
 export function StatusBar() {
   const model = useModelStore((s) => s.model);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
@@ -18,8 +34,10 @@ export function StatusBar() {
   const currentTime = useAnimationStore((s) => s.currentTime);
   const duration = useAnimationStore((s) => s.duration);
   const timelineZoom = useAnimationStore((s) => s.timelineZoom);
+  const speed = useAnimationStore((s) => s.speed);
   const gizmoSpace = useAnimationStore((s) => s.gizmoSpace);
   const setTimelineZoom = useAnimationStore((s) => s.setTimelineZoom);
+  const setSpeed = useAnimationStore((s) => s.setSpeed);
   const fitTimelineToView = useAnimationStore((s) => s.fitTimelineToView);
   const updateCustomClipData = useAnimationStore((s) => s.updateCustomClipData);
   const fps = useViewportFps(showFps);
@@ -29,9 +47,13 @@ export function StatusBar() {
   const boneCount = model ? model.skeletonGroups.reduce((n, g) => n + g.bones.length, 0) : 0;
 
   const [durationDraft, setDurationDraft] = useState(duration);
+  const [speedDraft, setSpeedDraft] = useState(speed);
   useEffect(() => {
     setDurationDraft(duration);
   }, [duration, activeClipId]);
+  useEffect(() => {
+    setSpeedDraft(speed);
+  }, [speed, activeClipId]);
 
   const commitDuration = (value: number) => {
     if (!activeClipId || !isEditable) return;
@@ -41,6 +63,11 @@ export function StatusBar() {
   const commitZoom = (value: number) => {
     if (!Number.isFinite(value) || value <= 0) return;
     setTimelineZoom(value);
+  };
+
+  const commitSpeed = (value: number) => {
+    if (!Number.isFinite(value)) return;
+    setSpeed(Math.max(SPEED_MIN, Math.min(SPEED_MAX, value)));
   };
 
   return (
@@ -141,6 +168,39 @@ export function StatusBar() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center gap-1.5 border-l border-border/50 pl-3">
+              <span className="text-[10px] uppercase tracking-wide text-foreground-muted/80">Speed</span>
+              <div className="flex items-center overflow-hidden rounded-md border border-border bg-background-subtle">
+                <FeedbackButton
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-none"
+                  title="Slower playback"
+                  onPress={() => commitSpeed(stepPlaybackSpeed(speed, -1))}
+                >
+                  <Minus className="h-3 w-3" />
+                </FeedbackButton>
+                <NumberInput
+                  label="×"
+                  value={speedDraft}
+                  onChange={setSpeedDraft}
+                  onCommit={commitSpeed}
+                  step={0.25}
+                  precision={speedDraft >= 1 ? 1 : 2}
+                  className="h-6 w-[4rem] rounded-none border-0 border-x border-border text-[11px]"
+                />
+                <FeedbackButton
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-none"
+                  title="Faster playback"
+                  onPress={() => commitSpeed(stepPlaybackSpeed(speed, 1))}
+                >
+                  <Plus className="h-3 w-3" />
+                </FeedbackButton>
+              </div>
+            </div>
 
             <span className={isPlaying ? "text-success" : ""}>{isPlaying ? "Playing" : "Paused"}</span>
           </>

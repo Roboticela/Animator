@@ -10,12 +10,15 @@ import {
   FileX2,
   Info,
   Keyboard,
+  Layers3,
   LifeBuoy,
   Loader2,
   Menu,
   Palette,
+  Redo2,
   Scale,
   Shield,
+  Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -36,6 +39,7 @@ import { openLink } from "@/lib/tauri";
 import { GuideModal } from "@/components/modals/GuideModal";
 import { AboutModal } from "@/components/modals/AboutModal";
 import { ExportModal } from "@/components/modals/ExportModal";
+import { SceneInfoModal } from "@/components/modals/SceneInfoModal";
 import { ShortcutsModal } from "@/components/modals/ShortcutsModal";
 import { cn } from "@/lib/utils";
 
@@ -45,12 +49,17 @@ export function AppHeader() {
   const model = useModelStore((s) => s.model);
   const clearModel = useModelStore((s) => s.clearModel);
   const resetAnimations = useAnimationStore((s) => s.resetForNewModel);
+  const undoStack = useAnimationStore((s) => s.undoStack);
+  const redoStack = useAnimationStore((s) => s.redoStack);
+  const undo = useAnimationStore((s) => s.undo);
+  const redo = useAnimationStore((s) => s.redo);
   const { theme, setTheme } = useTheme();
   const { openFile, loadSampleRig, isLoading, error, inputRef, handleInputChange } = useOpenModel();
 
   const [guideOpen, setGuideOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [sceneInfoOpen, setSceneInfoOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const currentTheme = THEMES.find((t) => t.name === theme);
@@ -126,6 +135,29 @@ export function AppHeader() {
         <div className="ml-auto flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
           {error && <span className="mr-1 hidden max-w-[8rem] truncate text-xs text-danger md:inline">{error}</span>}
 
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            title="Undo (Ctrl+Z)"
+            disabled={undoStack.length === 0}
+            onClick={() => undo()}
+          >
+            <Undo2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Undo</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            title="Redo (Ctrl+Y)"
+            disabled={redoStack.length === 0}
+            onClick={() => redo()}
+          >
+            <Redo2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Redo</span>
+          </Button>
+
           <input ref={inputRef} type="file" accept=".glb,.gltf,.fbx,.obj" className="hidden" onChange={handleInputChange} />
 
           <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap" onClick={openFile} disabled={isLoading}>
@@ -142,6 +174,18 @@ export function AppHeader() {
           >
             <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">Export</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            onClick={() => setSceneInfoOpen(true)}
+            disabled={!model || isLoading}
+            title="Scene statistics and model details"
+          >
+            <Layers3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Scene</span>
           </Button>
 
           <DropdownMenu>
@@ -249,6 +293,7 @@ export function AppHeader() {
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ExportModal isOpen={exportOpen} onClose={() => setExportOpen(false)} />
+      <SceneInfoModal isOpen={sceneInfoOpen} onClose={() => setSceneInfoOpen(false)} />
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </>
   );

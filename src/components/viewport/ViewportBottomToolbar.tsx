@@ -1,19 +1,28 @@
 import type { RefObject } from "react";
 import {
+  Bone,
   Box,
   Camera,
+  Circle,
   Clipboard,
   ClipboardPaste,
+  Compass,
   Diamond,
+  Eye,
+  EyeOff,
+  Filter,
   FlipHorizontal2,
-  Focus,
   Fullscreen,
   Globe,
+  Grid2x2,
+  Home,
   Layers,
-  Maximize2,
-  ScanLine,
-  Shapes,
-  Trash2,
+  Layers2,
+  ListTree,
+  ScanEye,
+  Triangle,
+  Video,
+  X,
 } from "lucide-react";
 import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { cn } from "@/lib/utils";
@@ -21,9 +30,9 @@ import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import {
   copySelectedBoneTransforms,
-  deleteKeyframesAtPlayheadForSelection,
   mirrorSelectedBonesOnX,
   pasteSelectedBoneTransforms,
+  resetSelectedBones,
   setKeyframesForSelection,
 } from "@/lib/app-actions";
 import { hasBoneClipboard } from "@/lib/bone-clipboard";
@@ -40,7 +49,13 @@ interface ViewportBottomToolbarProps {
 export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarProps) {
   const model = useModelStore((s) => s.model);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
-  const hasSelection = selectedBoneNames.length > 0;
+  const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
+  const setViewportSelectionTarget = useModelStore((s) => s.setViewportSelectionTarget);
+  const selectAllActive = useModelStore((s) => s.selectAllActive);
+  const clearActiveSelection = useModelStore((s) => s.clearActiveSelection);
+  const pickingBones = viewportSelectionTarget === "bones";
+  const hasSelection = pickingBones ? selectedBoneNames.length > 0 : selectedMeshUuids.length > 0;
 
   const showMesh = useModelStore((s) => s.showMesh);
   const toggleShowMesh = useModelStore((s) => s.toggleShowMesh);
@@ -59,16 +74,59 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5">
-      <div className="pointer-events-auto flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm">
+      <div className="pointer-events-auto flex max-w-[min(100%,52rem)] flex-wrap items-center gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm">
+        <div className="flex gap-0.5 rounded-lg border border-border/50 bg-background-subtle/80 p-0.5">
+          <FeedbackButton
+            variant={pickingBones ? "default" : "ghost"}
+            size="icon"
+            title="Select bones in viewport"
+            className="h-7 w-7"
+            onPress={() => setViewportSelectionTarget("bones")}
+          >
+            <Bone className="h-4 w-4" />
+          </FeedbackButton>
+          <FeedbackButton
+            variant={!pickingBones ? "default" : "ghost"}
+            size="icon"
+            title="Select mesh parts in viewport"
+            className="h-7 w-7"
+            onPress={() => setViewportSelectionTarget("parts")}
+          >
+            <Box className="h-4 w-4" />
+          </FeedbackButton>
+        </div>
+
+        <ToolbarDivider />
+
+        <FeedbackButton
+          variant="ghost"
+          size="icon"
+          title={pickingBones ? "Select all bones (Ctrl+A)" : "Select all parts (Ctrl+A)"}
+          disabled={!model}
+          onPress={() => selectAllActive()}
+        >
+          <ListTree className="h-4 w-4" />
+        </FeedbackButton>
+        <FeedbackButton
+          variant="ghost"
+          size="icon"
+          title="Clear selection (Esc)"
+          disabled={!hasSelection}
+          onPress={() => clearActiveSelection()}
+        >
+          <X className="h-4 w-4" />
+        </FeedbackButton>
+
+        {pickingBones && (
+          <>
+        <ToolbarDivider />
+
         <FeedbackButton
           variant="ghost"
           size="icon"
           title="Copy transforms (Ctrl+C)"
           disabled={!hasSelection}
-          onPress={() => {
-            const count = copySelectedBoneTransforms();
-            return count > 0;
-          }}
+          onPress={() => copySelectedBoneTransforms() > 0}
         >
           <Clipboard className="h-4 w-4" />
         </FeedbackButton>
@@ -84,18 +142,16 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Mirror on X (M)"
+          title="Mirror selection on X (M)"
           disabled={!hasSelection}
-          onPress={() => {
-            mirrorSelectedBonesOnX();
-          }}
+          onPress={() => mirrorSelectedBonesOnX()}
         >
           <FlipHorizontal2 className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Set keyframe (K)"
+          title="Set keyframe at playhead (K)"
           disabled={!hasSelection}
           onPress={() => setKeyframesForSelection()}
         >
@@ -104,11 +160,11 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Delete keyframe at playhead (Del)"
+          title="Reset selected bones to bind pose (Home)"
           disabled={!hasSelection}
-          onPress={() => deleteKeyframesAtPlayheadForSelection()}
+          onPress={() => resetSelectedBones()}
         >
-          <Trash2 className="h-4 w-4" />
+          <Home className="h-4 w-4" />
         </FeedbackButton>
 
         <ToolbarDivider />
@@ -116,30 +172,32 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Frame selection (.)"
+          title="Frame selected bones (.)"
           disabled={!hasSelection}
           onPress={() => requestFrameSelection()}
         >
-          <Focus className="h-4 w-4" />
+          <ScanEye className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant={isolateSelection ? "default" : "ghost"}
           size="icon"
-          title="Isolate selection in skeleton"
+          title={isolateSelection ? "Show full skeleton" : "Isolate selected bones"}
           disabled={!hasSelection}
           onPress={() => toggleIsolateSelection()}
         >
-          <Layers className="h-4 w-4" />
+          <Filter className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant={gizmoSpace === "world" ? "default" : "ghost"}
           size="icon"
-          title={`Gizmo space: ${gizmoSpace} (X)`}
+          title={`Gizmo ${gizmoSpace === "world" ? "world" : "local"} space (X)`}
           disabled={!hasSelection}
           onPress={() => toggleGizmoSpace()}
         >
-          <Globe className="h-4 w-4" />
+          {gizmoSpace === "world" ? <Globe className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
         </FeedbackButton>
+          </>
+        )}
       </div>
 
       <div
@@ -150,37 +208,37 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         <FeedbackButton
           variant={showMesh ? "default" : "ghost"}
           size="icon"
-          title="Toggle mesh visibility"
+          title={showMesh ? "Hide mesh" : "Show mesh"}
           disabled={!model}
           onPress={() => toggleShowMesh()}
         >
-          <Shapes className="h-4 w-4" />
+          {showMesh ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
         </FeedbackButton>
         <FeedbackButton
           variant={orthographicCamera ? "default" : "ghost"}
           size="icon"
-          title="Orthographic camera (O)"
+          title={orthographicCamera ? "Perspective camera (O)" : "Orthographic camera (O)"}
           onPress={() => toggleOrthographicCamera()}
         >
-          <Camera className="h-4 w-4" />
+          {orthographicCamera ? <Grid2x2 className="h-4 w-4" /> : <Video className="h-4 w-4" />}
         </FeedbackButton>
         <FeedbackButton
           variant={flatShading ? "default" : "ghost"}
           size="icon"
-          title="Flat shading"
+          title={flatShading ? "Smooth shading" : "Flat shading"}
           disabled={!model}
           onPress={() => toggleFlatShading()}
         >
-          <Box className="h-4 w-4" />
+          {flatShading ? <Triangle className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
         </FeedbackButton>
         <FeedbackButton
           variant={doubleSided ? "default" : "ghost"}
           size="icon"
-          title="Double-sided materials"
+          title={doubleSided ? "Single-sided materials" : "Double-sided materials"}
           disabled={!model}
           onPress={() => toggleDoubleSided()}
         >
-          <ScanLine className="h-4 w-4" />
+          {doubleSided ? <Layers2 className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
         </FeedbackButton>
 
         <ToolbarDivider />
@@ -188,7 +246,7 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Screenshot viewport"
+          title="Save viewport screenshot"
           disabled={!model}
           onPress={() => {
             const canvas = getViewportCanvas(viewportRoot.current);
@@ -197,7 +255,7 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
             downloadViewportScreenshot(canvas, `${name}-viewport`);
           }}
         >
-          <Maximize2 className="h-4 w-4" />
+          <Camera className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant="ghost"

@@ -27,8 +27,12 @@ import {
   snapTime,
   timeKey,
   timeToPx,
+  type TimelineKeyframeRef,
 } from "@/lib/timeline-utils";
 import { zoomTimelineByFactor } from "@/lib/timeline-zoom";
+
+const MARQUEE_MIN_DRAG_PX = 4;
+const KEYFRAME_HIT_RADIUS_PX = 9;
 
 export function TimelinePanel() {
   const clips = useAnimationStore((s) => s.clips);
@@ -46,6 +50,7 @@ export function TimelinePanel() {
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const labelsScrollRef = useRef<HTMLDivElement>(null);
+  const marqueeRef = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const setTimelineViewportWidth = useAnimationStore((s) => s.setTimelineViewportWidth);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [snapToFrames, setSnapToFrames] = useState(true);
@@ -111,14 +116,37 @@ export function TimelinePanel() {
     (bone: string, time: number, mod: { ctrl: boolean; shift: boolean }) => {
       const ref = { bone, time };
       const times = activeClip?.editable ? getBoneKeyframeTimes(activeClip.editable, bone) : [];
-      if (mod.shift) selection.selectRangeOnBone(ref, times);
-      else if (mod.ctrl) selection.toggle(ref);
-      else selection.selectOne(ref);
+      const getTimesOnBone = (b: string) =>
+        activeClip?.editable ? getBoneKeyframeTimes(activeClip.editable, b) : [];
+
+      if (mod.shift) {
+        if (animatedBones.length > 0) {
+          selection.selectRangeAcrossBones(ref, animatedBones, getTimesOnBone);
+        } else {
+          selection.selectRangeOnBone(ref, times);
+        }
+      } else if (mod.ctrl) {
+        selection.toggle(ref);
+      } else {
+        selection.selectOne(ref);
+      }
       pickBone(bone);
       seek(time);
     },
-    [activeClip?.editable, pickBone, seek, selection]
+    [activeClip?.editable, animatedBones, pickBone, seek, selection]
   );
+
+  const allKeyframeRefs = useCallback(() => {
+    if (!activeClip?.editable) return [];
+    return animatedBones.flatMap((bone) =>
+      getBoneKeyframeTimes(activeClip.editable!, bone).map((time) => ({ bone, time }))
+    );
+  }, [activeClip?.editable, animatedBones]);
+
+  const selectAllKeyframes = useCallback(() => {
+    const refs = allKeyframeRefs();
+    if (refs.length > 0) selection.selectAll(refs);
+  }, [allKeyframeRefs, selection]);
 
   const deleteSelected = useCallback(() => {
     if (!activeClip?.editable || selection.selectedRefs.length === 0) return;
@@ -138,15 +166,24 @@ export function TimelinePanel() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
       if ((e.target as HTMLElement).tagName === "INPUT") return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "a" && isEditable) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectAllKeyframes();
+        return;
+      }
+
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
       if (!isEditable || selection.count === 0) return;
       e.preventDefault();
       deleteSelected();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [deleteSelected, isEditable, selection.count]);
+  }, [deleteSelected, isEditable, selectAllKeyframes, selection.count]);
 
   if (!activeClip) {
     return (
@@ -163,49 +200,84 @@ export function TimelinePanel() {
   const selectedEasing =
     primary && activeClip.editable ? getPoseEasing(activeClip.editable, primary.bone, primary.time) : "linear";
 
+  const collectKeyframesInMarquee = useCallback(
+    (box: { x0: number; y0: number; x1: number; y1: number }): TimelineKeyframeRef[] => {
+      if (!activeClip?.editable) return [];
+      const xMin = Math.min(box.x0, box.x1);
+      const xMax = Math.max(box.x0, box.x1);
+      const yMin = Math.min(box.y0, box.y1);
+      const yMax = Math.max(box.y0, box.y1);
+      const refs: TimelineKeyframeRef[] = [];
+      animatedBones.forEach((bone, rowIndex) => {
+        const rowTop = rowIndex * TIMELINE_ROW_HEIGHT;
+        const rowBottom = rowTop + TIMELINE_ROW_HEIGHT;
+        if (rowBottom < yMin || rowTop > yMax) return;
+        const times = getBoneKeyframeTimes(activeClip.editable!, bone);
+        times.forEach((t) => {
+          const x = timeToPx(t, timelineZoom);
+          const kfLeft = x - KEYFRAME_HIT_RADIUS_PX;
+          const kfRight = x + KEYFRAME_HIT_RADIUS_PX;
+          if (kfRight >= xMin && kfLeft <= xMax) refs.push({ bone, time: t });
+        });
+      });
+      return refs;
+    },
+    [activeClip?.editable, animatedBones, timelineZoom]
+  );
+
   const onMarqueePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isEditable || e.button !== 0) return;
     if ((e.target as HTMLElement).closest("[data-keyframe]")) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+
+    const tracksEl = e.currentTarget;
+    const rect = tracksEl.getBoundingClientRect();
     const x0 = e.clientX - rect.left;
     const y0 = e.clientY - rect.top;
-    setMarquee({ x0, y0, x1: x0, y1: y0 });
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
+    const box = { x0, y0, x1: x0, y1: y0 };
+    marqueeRef.current = box;
+    setMarquee(box);
+    tracksEl.setPointerCapture(e.pointerId);
 
-  const onMarqueePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!marquee) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMarquee({
-      ...marquee,
-      x1: e.clientX - rect.left,
-      y1: e.clientY - rect.top,
-    });
-  };
+    const onMove = (ev: PointerEvent) => {
+      const current = marqueeRef.current;
+      if (!current) return;
+      const r = tracksEl.getBoundingClientRect();
+      const next = {
+        ...current,
+        x1: ev.clientX - r.left,
+        y1: ev.clientY - r.top,
+      };
+      marqueeRef.current = next;
+      setMarquee(next);
+    };
 
-  const onMarqueePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!marquee || !activeClip.editable) {
+    const onUp = (ev: PointerEvent) => {
+      tracksEl.releasePointerCapture(e.pointerId);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+
+      const finalBox = marqueeRef.current;
+      marqueeRef.current = null;
       setMarquee(null);
-      return;
-    }
-    const xMin = Math.min(marquee.x0, marquee.x1);
-    const xMax = Math.max(marquee.x0, marquee.x1);
-    const yMin = Math.min(marquee.y0, marquee.y1);
-    const yMax = Math.max(marquee.y0, marquee.y1);
-    const refs: { bone: string; time: number }[] = [];
-    animatedBones.forEach((bone, rowIndex) => {
-      const rowTop = rowIndex * TIMELINE_ROW_HEIGHT;
-      const rowBottom = rowTop + TIMELINE_ROW_HEIGHT;
-      if (rowBottom < yMin || rowTop > yMax) return;
-      const times = getBoneKeyframeTimes(activeClip.editable!, bone);
-      times.forEach((t) => {
-        const x = timeToPx(t, timelineZoom);
-        if (x >= xMin && x <= xMax) refs.push({ bone, time: t });
-      });
-    });
-    if (refs.length > 0) selection.selectMany(refs);
-    else if (!e.shiftKey && !e.ctrlKey) selection.clear();
-    setMarquee(null);
+
+      if (!finalBox || !activeClip?.editable) return;
+
+      const dragDx = Math.abs(finalBox.x1 - finalBox.x0);
+      const dragDy = Math.abs(finalBox.y1 - finalBox.y0);
+      if (dragDx < MARQUEE_MIN_DRAG_PX && dragDy < MARQUEE_MIN_DRAG_PX) return;
+
+      const refs = collectKeyframesInMarquee(finalBox);
+      const mod = ev.ctrlKey || ev.metaKey || ev.shiftKey;
+      if (refs.length > 0) {
+        if (mod) selection.addMany(refs);
+        else selection.selectMany(refs);
+      } else if (!mod) {
+        selection.clear();
+      }
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
   };
 
   const tracksMinHeight = Math.max(animatedBones.length * TIMELINE_ROW_HEIGHT, 120);
@@ -216,7 +288,10 @@ export function TimelinePanel() {
   return (
     <div
       ref={panelRef}
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/90 to-background shadow-inner"
+      data-timeline-panel
+      tabIndex={-1}
+      onPointerDown={() => panelRef.current?.focus({ preventScroll: true })}
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/90 to-background shadow-inner outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
     >
       <TimelineToolbar
         clipName={activeClip.name}
@@ -293,14 +368,13 @@ export function TimelinePanel() {
             />
 
             <div
-              className="relative z-[1]"
+              className="relative z-[8]"
               style={{ minHeight: tracksMinHeight, marginTop: TIMELINE_RULER_HEIGHT }}
               onPointerDown={onMarqueePointerDown}
-              onPointerMove={onMarqueePointerMove}
-              onPointerUp={onMarqueePointerUp}
               onClick={(e) => {
-                if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.trackCanvas) {
-                  if (!e.shiftKey && !e.ctrlKey) selection.clear();
+                if ((e.target as HTMLElement).closest("[data-keyframe]")) return;
+                if (e.target === e.currentTarget) {
+                  if (!e.shiftKey && !e.ctrlKey && !e.metaKey) selection.clear();
                   const scrollEl = scrollRef.current;
                   if (!scrollEl) return;
                   const rect = scrollEl.getBoundingClientRect();
@@ -338,13 +412,13 @@ export function TimelinePanel() {
                   onMoveKeyframe={(oldTime, newTime) => {
                     if (!activeClip.editable) return;
                     const snapped = snapMove(newTime);
-                    const selectedOnBone = selection.selectedRefs.filter((r) => r.bone === bone);
-                    if (selectedOnBone.length > 1 && selection.isSelected({ bone, time: oldTime })) {
+                    const selected = selection.selectedRefs;
+                    if (selected.length > 1 && selection.isSelected({ bone, time: oldTime })) {
                       const delta = snapped - oldTime;
                       updateCustomClipData(activeClip.id, (data) =>
                         moveBoneKeyframes(
                           data,
-                          selectedOnBone.map((r) => ({
+                          selected.map((r) => ({
                             boneName: r.bone,
                             oldTime: r.time,
                             newTime: timeKey(Math.max(0, Math.min(r.time + delta, clipDuration))),
@@ -352,14 +426,22 @@ export function TimelinePanel() {
                         )
                       );
                       selection.selectMany(
-                        selectedOnBone.map((r) => ({
+                        selected.map((r) => ({
                           bone: r.bone,
                           time: timeKey(Math.max(0, Math.min(r.time + delta, clipDuration))),
                         }))
                       );
                     } else {
                       updateCustomClipData(activeClip.id, (data) => moveBoneKeyframe(data, bone, oldTime, snapped));
-                      selection.selectOne({ bone, time: snapped });
+                      if (!selection.isSelected({ bone, time: oldTime })) {
+                        selection.selectOne({ bone, time: snapped });
+                      } else {
+                        selection.selectMany(
+                          selection.selectedRefs.map((r) =>
+                            r.bone === bone && r.time === oldTime ? { bone, time: snapped } : r
+                          )
+                        );
+                      }
                     }
                   }}
                   onDeleteKeyframe={(time) => {

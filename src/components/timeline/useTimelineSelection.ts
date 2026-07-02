@@ -46,9 +46,56 @@ export function useTimelineSelection() {
     [anchor, selectOne]
   );
 
+  const selectRangeAcrossBones = useCallback(
+    (
+      ref: TimelineKeyframeRef,
+      boneOrder: string[],
+      getTimesOnBone: (bone: string) => number[]
+    ) => {
+      if (!anchor) {
+        selectOne(ref);
+        return;
+      }
+      const ai = boneOrder.indexOf(anchor.bone);
+      const bi = boneOrder.indexOf(ref.bone);
+      if (ai === -1 || bi === -1) {
+        selectOne(ref);
+        return;
+      }
+      const boneLo = Math.min(ai, bi);
+      const boneHi = Math.max(ai, bi);
+      const timeLo = Math.min(timeKey(anchor.time), timeKey(ref.time));
+      const timeHi = Math.max(timeKey(anchor.time), timeKey(ref.time));
+      const ids: string[] = [];
+      for (let i = boneLo; i <= boneHi; i++) {
+        const bone = boneOrder[i];
+        getTimesOnBone(bone).forEach((t) => {
+          if (t >= timeLo && t <= timeHi) ids.push(keyframeId({ bone, time: t }));
+        });
+      }
+      setSelectedIds(new Set(ids));
+    },
+    [anchor, selectOne]
+  );
+
   const selectMany = useCallback((refs: TimelineKeyframeRef[]) => {
     setSelectedIds(new Set(refs.map(keyframeId)));
     if (refs.length > 0) setAnchor(refs[refs.length - 1]);
+  }, []);
+
+  const addMany = useCallback((refs: TimelineKeyframeRef[]) => {
+    if (refs.length === 0) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      refs.forEach((r) => next.add(keyframeId(r)));
+      return next;
+    });
+    setAnchor(refs[refs.length - 1]);
+  }, []);
+
+  const selectAll = useCallback((refs: TimelineKeyframeRef[]) => {
+    setSelectedIds(new Set(refs.map(keyframeId)));
+    if (refs.length > 0) setAnchor(refs[0]);
   }, []);
 
   const isSelected = useCallback((ref: TimelineKeyframeRef) => selectedIds.has(keyframeId(ref)), [selectedIds]);
@@ -74,7 +121,10 @@ export function useTimelineSelection() {
     selectOne,
     toggle,
     selectRangeOnBone,
+    selectRangeAcrossBones,
     selectMany,
+    addMany,
+    selectAll,
     isSelected,
     count: selectedIds.size,
   };

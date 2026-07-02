@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { pxToTime, timeToPx } from "@/lib/timeline-utils";
+import { TIMELINE_RULER_HEIGHT, pxToTime, timeToPx } from "@/lib/timeline-utils";
 
 interface TimelinePlayheadProps {
   time: number;
@@ -51,18 +51,22 @@ export function TimelinePlayhead({
 
   return (
     <div
-      className="absolute top-0 z-40 touch-none"
+      className="pointer-events-none absolute top-0 z-40 touch-none"
       style={{ left: x, height, width: 0 }}
       aria-hidden
     >
+      {/* Draggable scrub handle — ruler only so keyframes stay clickable */}
       <div
-        className="absolute -translate-x-1/2 cursor-ew-resize"
-        style={{ top: 0, height, width: 14 }}
+        className="pointer-events-auto absolute -translate-x-1/2 cursor-ew-resize"
+        style={{ top: 0, height: TIMELINE_RULER_HEIGHT, width: 16 }}
         title={`Playhead ${time.toFixed(2)}s — drag to scrub`}
         onPointerDown={onPointerDown}
       >
         <div className="pointer-events-none absolute -top-0.5 left-1/2 h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-primary drop-shadow-sm" />
-        <div className="pointer-events-none absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)]" />
+        <div
+          className="pointer-events-none absolute left-1/2 top-0 w-0.5 -translate-x-1/2 bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)]"
+          style={{ height }}
+        />
       </div>
     </div>
   );

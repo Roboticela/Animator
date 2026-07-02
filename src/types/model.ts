@@ -10,6 +10,24 @@ export interface BoneInfo {
   bone: THREE.Bone;
 }
 
+export type MeshPartKind = "group" | "mesh" | "primitive";
+
+export interface MeshPartInfo {
+  /** Stable selection id — mesh uuid, group uuid, or `${mesh.uuid}:g${index}` for primitives. */
+  id: string;
+  uuid: string;
+  name: string;
+  depth: number;
+  parentId: string | null;
+  parentUuid: string | null;
+  kind: MeshPartKind;
+  mesh?: THREE.Mesh;
+  geometryGroupIndex?: number;
+  isSkinned: boolean;
+  vertexCount: number;
+  triangleCount: number;
+}
+
 /** One imported skeleton, grouped under its "Armature" root (Blender-style naming). */
 export interface SkeletonGroup {
   id: string;

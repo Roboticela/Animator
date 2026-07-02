@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Viewport3D } from "@/components/viewport/Viewport3D";
-import { BoneTreePanel } from "@/components/panels/BoneTreePanel";
-import { SceneInfoPanel } from "@/components/panels/SceneInfoPanel";
+import { ModelHierarchyPanel } from "@/components/panels/ModelHierarchyPanel";
 import { TransformInspector } from "@/components/panels/TransformInspector";
 import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
 import { TimelinePanel } from "@/components/timeline/TimelinePanel";
@@ -36,13 +35,12 @@ export function AppShell() {
   const togglePlay = useAnimationStore((s) => s.togglePlay);
   const stepFrame = useAnimationStore((s) => s.stepFrame);
   const toggleGizmoSpace = useAnimationStore((s) => s.toggleGizmoSpace);
-  const clearBoneSelection = useModelStore((s) => s.clearBoneSelection);
-  const selectAllBones = useModelStore((s) => s.selectAllBones);
+  const selectAllActive = useModelStore((s) => s.selectAllActive);
+  const clearActiveSelection = useModelStore((s) => s.clearActiveSelection);
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
 
   const [layout, setLayout] = useState<LayoutPreferences>(() => loadLayoutPreferences());
-  const leftAsideRef = useRef<HTMLElement>(null);
   const rightAsideRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -74,14 +72,18 @@ export function AppShell() {
       const mod = e.ctrlKey || e.metaKey;
 
       if (mod && e.key.toLowerCase() === "a") {
+        const inTimeline =
+          (e.target as HTMLElement).closest("[data-timeline-panel]") ??
+          document.querySelector("[data-timeline-panel]:focus-within");
+        if (inTimeline) return;
         e.preventDefault();
-        selectAllBones();
+        selectAllActive();
         return;
       }
 
       if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        clearBoneSelection();
+        clearActiveSelection();
         return;
       }
 
@@ -115,7 +117,7 @@ export function AppShell() {
       else if (e.key === " ") {
         e.preventDefault();
         togglePlay();
-      } else if (e.key === "Escape") clearBoneSelection();
+      } else if (e.key === "Escape") clearActiveSelection();
       else if (e.key === "k" || e.key === "K") {
         e.preventDefault();
         setKeyframesForSelection();
@@ -159,7 +161,7 @@ export function AppShell() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setTransformMode, togglePlay, stepFrame, toggleGizmoSpace, clearBoneSelection, selectAllBones, undo, redo]);
+  }, [setTransformMode, togglePlay, stepFrame, toggleGizmoSpace, clearActiveSelection, selectAllActive, undo, redo]);
 
   const timelineMaxHeight = () => {
     const shell = shellRef.current;
@@ -171,25 +173,10 @@ export function AppShell() {
     <div ref={shellRef} className="flex h-full min-h-0 flex-col overflow-hidden p-2 sm:p-4">
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <aside
-          ref={leftAsideRef}
           className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
           style={{ width: layout.leftWidth }}
         >
-          <div className="min-h-0 overflow-hidden" style={{ flex: `${layout.leftSplit} 1 0` }}>
-            <BoneTreePanel />
-          </div>
-          <ResizeHandle
-            axis="vertical"
-            onDrag={(delta) => {
-              const total = leftAsideRef.current?.clientHeight ?? 0;
-              if (total <= 0) return;
-              const topPx = layout.leftSplit * total + delta;
-              patchLayout({ leftSplit: topPx / total });
-            }}
-          />
-          <div className="min-h-0 overflow-hidden" style={{ flex: `${1 - layout.leftSplit} 1 0` }}>
-            <SceneInfoPanel />
-          </div>
+          <ModelHierarchyPanel />
         </aside>
 
         <ResizeHandle

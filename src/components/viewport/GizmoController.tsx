@@ -21,6 +21,7 @@ export function GizmoController() {
 
   const primaryName = getPrimaryBoneName(selectedBoneNames);
   const primaryBone = primaryName ? boneMap.get(primaryName)?.bone : undefined;
+  const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
 
   const controlsRef = useRef<TransformControlsImpl>(null);
   const dragSnapshots = useRef<Map<string, BoneTransformSnapshot>>(new Map());
@@ -93,7 +94,7 @@ export function GizmoController() {
     dragSnapshots.current.clear();
   };
 
-  if (!primaryBone) return null;
+  if (viewportSelectionTarget !== "bones" || !primaryBone) return null;
 
   return (
     <TransformControls

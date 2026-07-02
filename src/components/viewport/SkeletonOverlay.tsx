@@ -12,6 +12,7 @@ export function SkeletonOverlay() {
   const showSkeleton = useModelStore((s) => s.showSkeleton);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const pickBone = useModelStore((s) => s.pickBone);
+  const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
   const isolateSelection = useModelStore((s) => s.isolateSelection);
   const jointRadius = Math.max(sceneRadius * 0.016, 0.008);
@@ -93,6 +94,7 @@ export function SkeletonOverlay() {
   if (!model || !showSkeleton || displayBones.length === 0) return null;
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    if (viewportSelectionTarget !== "bones") return;
     e.stopPropagation();
     if (e.instanceId === undefined) return;
     const info = displayBones[e.instanceId];
@@ -101,12 +103,19 @@ export function SkeletonOverlay() {
     pickBoneFromClick(pickBone, info.name, selectedBoneNames, e.nativeEvent);
   };
 
+  const pickBones = viewportSelectionTarget === "bones";
+
   return (
     <group renderOrder={999}>
-      <lineSegments ref={linesRef} geometry={lineGeometry}>
+      <lineSegments ref={linesRef} geometry={lineGeometry} raycast={pickBones ? undefined : () => null}>
         <lineBasicMaterial color="#facc15" depthTest={false} transparent opacity={0.85} />
       </lineSegments>
-      <instancedMesh ref={jointsRef} args={[undefined, undefined, Math.max(displayBones.length, 1)]} onClick={handleClick}>
+      <instancedMesh
+        ref={jointsRef}
+        args={[undefined, undefined, Math.max(displayBones.length, 1)]}
+        onClick={pickBones ? handleClick : undefined}
+        raycast={pickBones ? undefined : () => null}
+      >
         <sphereGeometry args={[jointRadius, 10, 10]} />
         <meshBasicMaterial color={JOINT_COLOR} depthTest={false} transparent opacity={0.95} />
       </instancedMesh>

@@ -17,17 +17,13 @@ import {
   Flag,
   Flame,
   Focus,
-  Gauge,
   Magnet,
   MoveHorizontal,
-  Pause,
   Play,
   Redo2,
   Repeat,
   Rewind,
   Scan,
-  SkipBack,
-  SlidersHorizontal,
   Spline,
   Square,
   Trash2,
@@ -46,8 +42,6 @@ import type { KeyframeEasingId } from "@/lib/keyframe-easing";
 import { KEYFRAME_EASINGS } from "@/lib/keyframe-easing";
 import { setBoneKeyframeEasing, setEasingForAllBonesAtTime } from "@/lib/app-actions";
 import { useAnimationStore } from "@/store/animationStore";
-
-const SPEEDS = [0.25, 0.5, 1, 1.5, 2];
 
 const KEYFRAME_EASING_ICONS: Record<KeyframeEasingId, LucideIcon> = {
   linear: MoveHorizontal,
@@ -103,7 +97,6 @@ export function TimelineToolbar({
   const isPlaying = useAnimationStore((s) => s.isPlaying);
   const loop = useAnimationStore((s) => s.loop);
   const loopInRange = useAnimationStore((s) => s.loopInRange);
-  const speed = useAnimationStore((s) => s.speed);
   const currentTime = useAnimationStore((s) => s.currentTime);
   const duration = useAnimationStore((s) => s.duration);
   const playRangeStart = useAnimationStore((s) => s.playRangeStart);
@@ -112,25 +105,19 @@ export function TimelineToolbar({
   const undoStack = useAnimationStore((s) => s.undoStack);
   const redoStack = useAnimationStore((s) => s.redoStack);
 
-  const togglePlay = useAnimationStore((s) => s.togglePlay);
+  const play = useAnimationStore((s) => s.play);
   const stop = useAnimationStore((s) => s.stop);
   const seek = useAnimationStore((s) => s.seek);
   const toggleLoop = useAnimationStore((s) => s.toggleLoop);
   const toggleLoopInRange = useAnimationStore((s) => s.toggleLoopInRange);
   const resetPlayRange = useAnimationStore((s) => s.resetPlayRange);
-  const setSpeed = useAnimationStore((s) => s.setSpeed);
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
   const stepFrame = useAnimationStore((s) => s.stepFrame);
 
   const disabled = !activeClipId;
   const rangeEnd = playRangeEnd > 0 ? playRangeEnd : duration;
-  const effectsEnabled = isEditable && selectedKeyframe !== null;
-
-  const cycleSpeed = () => {
-    const idx = SPEEDS.indexOf(speed);
-    setSpeed(SPEEDS[(idx + 1) % SPEEDS.length]);
-  };
+  const effectsEnabled = isEditable && selectionCount > 0;
 
   const applyEasing = (easing: KeyframeEasingId) => {
     if (!selectedKeyframe) return false;
@@ -154,14 +141,18 @@ export function TimelineToolbar({
 
       {/* Transport */}
       <div className="flex flex-shrink-0 items-center gap-0.5 rounded-lg border border-border/50 bg-background-subtle/90 p-0.5 shadow-sm">
-        <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Stop" className="h-7 w-7" onPress={() => stop()}>
-          <SkipBack className="h-3.5 w-3.5" />
-        </FeedbackButton>
         <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Previous frame" className="h-7 w-7" onPress={() => stepFrame(-1)}>
           <ChevronLeft className="h-3.5 w-3.5" />
         </FeedbackButton>
-        <FeedbackButton variant="default" size="icon" disabled={disabled} title="Play / Pause" className="h-7 w-7" onPress={() => togglePlay()}>
-          {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        <FeedbackButton
+          variant="default"
+          size="icon"
+          disabled={disabled}
+          title={isPlaying ? "Stop" : "Play"}
+          className="h-7 w-7"
+          onPress={() => (isPlaying ? stop() : play())}
+        >
+          {isPlaying ? <Square className="h-3 w-3 fill-current" /> : <Play className="h-3.5 w-3.5" />}
         </FeedbackButton>
         <FeedbackButton variant="ghost" size="icon" disabled={disabled} title="Next frame" className="h-7 w-7" onPress={() => stepFrame(1)}>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -199,17 +190,6 @@ export function TimelineToolbar({
         <Focus className="h-3.5 w-3.5" />
       </FeedbackButton>
 
-      <FeedbackButton
-        variant="ghost"
-        size="icon"
-        disabled={disabled}
-        onPress={() => cycleSpeed()}
-        title={`Playback speed: ${speed}x`}
-        className="h-7 w-7 flex-shrink-0"
-      >
-        <Gauge className="h-3.5 w-3.5" />
-      </FeedbackButton>
-
       <div className="h-5 w-px flex-shrink-0 bg-border/60" />
 
       <FeedbackButton
@@ -227,20 +207,6 @@ export function TimelineToolbar({
       {isEditable && (
         <>
           <div className="h-5 w-px flex-shrink-0 bg-border/60" />
-          <FeedbackButton
-            variant="ghost"
-            size="icon"
-            disabled={!effectsEnabled}
-            title={
-              effectsEnabled
-                ? `Easing for ${selectedKeyframe.bone} @ ${selectedKeyframe.time.toFixed(2)}s`
-                : "Keyframe easing — select a keyframe"
-            }
-            className="h-7 w-7 flex-shrink-0 pointer-events-none opacity-70"
-            onPress={() => {}}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </FeedbackButton>
           <FeedbackButton
             variant={applyToAll ? "default" : "ghost"}
             size="icon"

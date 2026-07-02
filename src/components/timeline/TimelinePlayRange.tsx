@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { timeToPx } from "@/lib/timeline-utils";
+import { TIMELINE_RULER_HEIGHT, timeToPx } from "@/lib/timeline-utils";
 import { useAnimationStore } from "@/store/animationStore";
 
 interface TimelinePlayRangeProps {
@@ -67,17 +67,27 @@ export function TimelinePlayRange({
       {editable && (
         <>
           <div
-            className="absolute top-0 z-20 h-full w-2 -translate-x-1/2 cursor-ew-resize rounded-full bg-primary/80 hover:bg-primary"
+            className="absolute top-0 z-20 -translate-x-1/2"
             style={{ left: rangeLeft, height }}
-            title="Play range start"
-            onPointerDown={dragHandle("start")}
-          />
+          >
+            <div
+              className="pointer-events-auto cursor-ew-resize rounded-full bg-primary/80 hover:bg-primary"
+              style={{ width: 8, height: TIMELINE_RULER_HEIGHT }}
+              title="Play range start"
+              onPointerDown={dragHandle("start")}
+            />
+          </div>
           <div
-            className="absolute top-0 z-20 h-full w-2 -translate-x-1/2 cursor-ew-resize rounded-full bg-primary/80 hover:bg-primary"
+            className="absolute top-0 z-20 -translate-x-1/2"
             style={{ left: rangeLeft + rangeWidth, height }}
-            title="Play range end"
-            onPointerDown={dragHandle("end")}
-          />
+          >
+            <div
+              className="pointer-events-auto cursor-ew-resize rounded-full bg-primary/80 hover:bg-primary"
+              style={{ width: 8, height: TIMELINE_RULER_HEIGHT }}
+              title="Play range end"
+              onPointerDown={dragHandle("end")}
+            />
+          </div>
         </>
       )}
     </>

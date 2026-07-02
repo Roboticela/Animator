@@ -1,33 +1,32 @@
 import type { RefObject } from "react";
 import {
+  Activity,
   ArrowDownToLine,
+  ArrowLeftRight,
   Axis3d,
   Bone,
-  Bookmark,
-  Box,
+  Contrast,
+  Cuboid,
   Focus,
-  Gauge,
   Grid3x3,
   Lightbulb,
   LightbulbOff,
-  Move3d,
+  Move,
   Orbit,
-  Rotate3d,
   RotateCcw,
+  RotateCw,
+  Save,
   Scale3d,
-  ScanLine,
-  Shuffle,
-  Sun,
-  SunDim,
+  Waypoints,
 } from "lucide-react";
 import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { cn } from "@/lib/utils";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore, type TransformMode } from "@/store/animationStore";
 
-const MODES: { mode: TransformMode; icon: typeof Move3d; label: string }[] = [
-  { mode: "translate", icon: Move3d, label: "Move (W)" },
-  { mode: "rotate", icon: Rotate3d, label: "Rotate (E)" },
+const MODES: { mode: TransformMode; icon: typeof Move; label: string }[] = [
+  { mode: "translate", icon: Move, label: "Move (W)" },
+  { mode: "rotate", icon: RotateCw, label: "Rotate (E)" },
   { mode: "scale", icon: Scale3d, label: "Scale (R)" },
 ];
 
@@ -83,13 +82,13 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
 
       <div
         className={cn(
-          "pointer-events-auto flex max-w-[min(100%,46rem)] flex-wrap items-center justify-end gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm"
+          "pointer-events-auto flex max-w-[min(100%,52rem)] flex-wrap items-center justify-end gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm"
         )}
       >
         <FeedbackButton
           variant={showLights ? "default" : "ghost"}
           size="icon"
-          title={showLights ? "Studio lights on (L)" : "Flat lighting (L)"}
+          title={showLights ? "Studio lighting on (L)" : "Flat lighting (L)"}
           onPress={() => toggleLights()}
         >
           {showLights ? <Lightbulb className="h-4 w-4" /> : <LightbulbOff className="h-4 w-4" />}
@@ -97,10 +96,10 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
         <FeedbackButton
           variant={showShadows ? "default" : "ghost"}
           size="icon"
-          title="Toggle shadows (H)"
+          title={showShadows ? "Ground shadows on (H)" : "Ground shadows off (H)"}
           onPress={() => toggleShadows()}
         >
-          {showShadows ? <Sun className="h-4 w-4" /> : <SunDim className="h-4 w-4" />}
+          <Contrast className={cn("h-4 w-4", !showShadows && "opacity-45")} />
         </FeedbackButton>
         <FeedbackButton
           variant={showFps ? "default" : "ghost"}
@@ -108,31 +107,31 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
           title="Show FPS in status bar"
           onPress={() => toggleShowFps()}
         >
-          <Gauge className="h-4 w-4" />
+          <Activity className="h-4 w-4" />
         </FeedbackButton>
 
         <ToolbarDivider />
 
-        <FeedbackButton variant={showGrid ? "default" : "ghost"} size="icon" title="Toggle grid (G)" onPress={() => toggleGrid()}>
+        <FeedbackButton variant={showGrid ? "default" : "ghost"} size="icon" title="Toggle floor grid (G)" onPress={() => toggleGrid()}>
           <Grid3x3 className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant={wireframe ? "default" : "ghost"}
           size="icon"
-          title="Toggle wireframe"
+          title={wireframe ? "Solid shading" : "Wireframe overlay"}
           onPress={() => toggleWireframe()}
         >
-          {wireframe ? <ScanLine className="h-4 w-4" /> : <Box className="h-4 w-4" />}
+          {wireframe ? <Waypoints className="h-4 w-4" /> : <Cuboid className="h-4 w-4" />}
         </FeedbackButton>
         <FeedbackButton
           variant={showSkeleton ? "default" : "ghost"}
           size="icon"
-          title="Toggle skeleton overlay"
+          title={showSkeleton ? "Hide skeleton bones" : "Show skeleton bones"}
           onPress={() => toggleSkeleton()}
         >
           <Bone className="h-4 w-4" />
         </FeedbackButton>
-        <FeedbackButton variant={showAxes ? "default" : "ghost"} size="icon" title="Toggle axis helper" onPress={() => toggleAxes()}>
+        <FeedbackButton variant={showAxes ? "default" : "ghost"} size="icon" title="Toggle world axes" onPress={() => toggleAxes()}>
           <Axis3d className="h-4 w-4" />
         </FeedbackButton>
 
@@ -141,7 +140,7 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
         <FeedbackButton
           variant={autoRotate ? "default" : "ghost"}
           size="icon"
-          title="Auto-rotate camera"
+          title={autoRotate ? "Stop camera orbit" : "Orbit camera around model"}
           onPress={() => toggleAutoRotate()}
         >
           <Orbit className="h-4 w-4" />
@@ -149,7 +148,7 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Frame model (F)"
+          title="Frame entire model (F)"
           disabled={!model}
           onPress={() => requestFrameCamera()}
         >
@@ -162,12 +161,15 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
           disabled={!model}
           onPress={() => invertBoneSelection()}
         >
-          <Shuffle className="h-4 w-4" />
+          <ArrowLeftRight className="h-4 w-4" />
         </FeedbackButton>
+
+        <ToolbarDivider />
+
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Center model on ground"
+          title="Drop model onto ground plane"
           disabled={!model}
           onPress={() => centerModelOnGround()}
         >
@@ -176,11 +178,11 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
         <FeedbackButton
           variant="ghost"
           size="icon"
-          title="Capture current pose as bind pose"
+          title="Save current pose as bind pose"
           disabled={!model}
           onPress={() => captureRestPose()}
         >
-          <Bookmark className="h-4 w-4" />
+          <Save className="h-4 w-4" />
         </FeedbackButton>
         <FeedbackButton
           variant="ghost"
