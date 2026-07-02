@@ -19,9 +19,14 @@ import {
   Layers,
   Layers2,
   ListTree,
+  MousePointer2,
   ScanEye,
+  Scissors,
+  SplitSquareHorizontal,
+  Trash2,
   Triangle,
   Video,
+  Waypoints,
   X,
 } from "lucide-react";
 import { FeedbackButton } from "@/components/ui/FeedbackButton";
@@ -36,6 +41,7 @@ import {
   setKeyframesForSelection,
 } from "@/lib/app-actions";
 import { hasBoneClipboard } from "@/lib/bone-clipboard";
+import type { MeshEditTool, MeshElementMode } from "@/lib/mesh-edit/types";
 import { downloadViewportScreenshot, getViewportCanvas } from "@/lib/viewport-screenshot";
 
 function ToolbarDivider() {
@@ -71,6 +77,27 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
 
   const gizmoSpace = useAnimationStore((s) => s.gizmoSpace);
   const toggleGizmoSpace = useAnimationStore((s) => s.toggleGizmoSpace);
+
+  const meshElementMode = useModelStore((s) => s.meshElementMode);
+  const meshEditTool = useModelStore((s) => s.meshEditTool);
+  const setMeshElementMode = useModelStore((s) => s.setMeshElementMode);
+  const setMeshEditTool = useModelStore((s) => s.setMeshEditTool);
+  const deleteSelectedMeshElements = useModelStore((s) => s.deleteSelectedMeshElements);
+  const clearMeshElementSelection = useModelStore((s) => s.clearMeshElementSelection);
+
+  const ELEMENT_MODES: { mode: MeshElementMode; icon: typeof Box; label: string }[] = [
+    { mode: "object", icon: Box, label: "Object (1)" },
+    { mode: "vertex", icon: Circle, label: "Vertex (2)" },
+    { mode: "edge", icon: Waypoints, label: "Edge (3)" },
+    { mode: "face", icon: Triangle, label: "Face (4)" },
+  ];
+
+  const EDIT_TOOLS: { tool: MeshEditTool; icon: typeof MousePointer2; label: string }[] = [
+    { tool: "select", icon: MousePointer2, label: "Select" },
+    { tool: "knife", icon: Scissors, label: "Knife — click start & end on mesh" },
+    { tool: "loopCut", icon: SplitSquareHorizontal, label: "Loop cut — click an edge" },
+    { tool: "delete", icon: Trash2, label: "Delete element" },
+  ];
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5">
@@ -196,6 +223,80 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
         >
           {gizmoSpace === "world" ? <Globe className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
         </FeedbackButton>
+          </>
+        )}
+
+        {!pickingBones && (
+          <>
+            <ToolbarDivider />
+            <div className="flex gap-0.5 rounded-lg border border-border/50 bg-background-subtle/80 p-0.5">
+              {ELEMENT_MODES.map(({ mode, icon: Icon, label }) => (
+                <FeedbackButton
+                  key={mode}
+                  variant={meshElementMode === mode ? "default" : "ghost"}
+                  size="icon"
+                  title={label}
+                  className="h-7 w-7"
+                  disabled={!model}
+                  onPress={() => setMeshElementMode(mode)}
+                >
+                  <Icon className="h-4 w-4" />
+                </FeedbackButton>
+              ))}
+            </div>
+
+            {meshElementMode !== "object" && (
+              <>
+                <ToolbarDivider />
+                <div className="flex gap-0.5 rounded-lg border border-border/50 bg-background-subtle/80 p-0.5">
+                  {EDIT_TOOLS.map(({ tool, icon: Icon, label }) => (
+                    <FeedbackButton
+                      key={tool}
+                      variant={meshEditTool === tool ? "default" : "ghost"}
+                      size="icon"
+                      title={label}
+                      className="h-7 w-7"
+                      disabled={!hasSelection}
+                      onPress={() => setMeshEditTool(tool)}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </FeedbackButton>
+                  ))}
+                </div>
+                <FeedbackButton
+                  variant="ghost"
+                  size="icon"
+                  title="Delete selected vertices/edges/faces"
+                  disabled={!hasSelection}
+                  onPress={() => deleteSelectedMeshElements()}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </FeedbackButton>
+                <FeedbackButton
+                  variant="ghost"
+                  size="icon"
+                  title="Clear element selection"
+                  onPress={() => clearMeshElementSelection()}
+                >
+                  <X className="h-4 w-4" />
+                </FeedbackButton>
+              </>
+            )}
+
+            {meshElementMode === "object" && (
+              <>
+                <ToolbarDivider />
+                <FeedbackButton
+                  variant={gizmoSpace === "world" ? "default" : "ghost"}
+                  size="icon"
+                  title={`Gizmo ${gizmoSpace === "world" ? "world" : "local"} space (X)`}
+                  disabled={!hasSelection}
+                  onPress={() => toggleGizmoSpace()}
+                >
+                  {gizmoSpace === "world" ? <Globe className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
+                </FeedbackButton>
+              </>
+            )}
           </>
         )}
       </div>

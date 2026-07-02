@@ -145,8 +145,33 @@ export function AppShell() {
       } else if (e.key === "Delete" || e.key === "Backspace") {
         if (mod) return;
         if (useAnimationStore.getState().timelineSelectedKeyframeCount > 0) return;
+        const modelState = useModelStore.getState();
+        if (
+          modelState.viewportSelectionTarget === "parts" &&
+          modelState.meshElementMode !== "object"
+        ) {
+          e.preventDefault();
+          modelState.deleteSelectedMeshElements();
+          return;
+        }
         e.preventDefault();
         deleteKeyframesAtPlayheadForSelection();
+      } else if (e.key === "1") {
+        if (useModelStore.getState().viewportSelectionTarget === "parts") {
+          useModelStore.getState().setMeshElementMode("object");
+        }
+      } else if (e.key === "2") {
+        if (useModelStore.getState().viewportSelectionTarget === "parts") {
+          useModelStore.getState().setMeshElementMode("vertex");
+        }
+      } else if (e.key === "3") {
+        if (useModelStore.getState().viewportSelectionTarget === "parts") {
+          useModelStore.getState().setMeshElementMode("edge");
+        }
+      } else if (e.key === "4") {
+        if (useModelStore.getState().viewportSelectionTarget === "parts") {
+          useModelStore.getState().setMeshElementMode("face");
+        }
       } else if (mod && e.shiftKey && e.key.toLowerCase() === "i") {
         e.preventDefault();
         useModelStore.getState().invertBoneSelection();

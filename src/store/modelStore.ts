@@ -18,6 +18,16 @@ import {
   setAllMeshPartsVisible,
   setMeshPartsVisible,
 } from "@/lib/model-edit";
+import type { MeshEditTool, MeshElementMode, MeshElementSelection } from "@/lib/mesh-edit/types";
+import { emptyMeshElementSelection } from "@/lib/mesh-edit/types";
+import {
+  deleteMeshEdges,
+  deleteMeshFaces,
+  deleteMeshVertices,
+  getEditMeshFromParts,
+  knifeCutMesh,
+  loopCutMesh,
+} from "@/lib/mesh-edit/operations";
 
 export type ViewportSelectionTarget = "bones" | "parts";
 
@@ -39,6 +49,12 @@ interface ModelState {
   selectedMeshUuids: string[];
   meshSelectionAnchorUuid: string | null;
   viewportSelectionTarget: ViewportSelectionTarget;
+  meshElementMode: MeshElementMode;
+  meshEditTool: MeshEditTool;
+  meshElementSelection: MeshElementSelection | null;
+  meshEditRevision: number;
+  knifeCutStart: THREE.Vector3 | null;
+  knifePreviewEnd: THREE.Vector3 | null;
   sceneRadius: number;
   wireframe: boolean;
   showSkeleton: boolean;
@@ -69,10 +85,20 @@ interface ModelState {
   selectAllBones: () => void;
   invertBoneSelection: () => void;
   clearBoneSelection: () => void;
-  pickMeshPart: (uuid: string | null, modifiers?: BonePickModifiers) => void;
+  pickMeshPart: (id: string | null, modifiers?: BonePickModifiers) => void;
   selectAllMeshParts: () => void;
   clearMeshSelection: () => void;
   setViewportSelectionTarget: (target: ViewportSelectionTarget) => void;
+  setMeshElementMode: (mode: MeshElementMode) => void;
+  setMeshEditTool: (tool: MeshEditTool) => void;
+  clearMeshElementSelection: () => void;
+  toggleMeshElement: (payload: { vertex?: number; edge?: string; face?: number }, additive: boolean) => void;
+  deleteSelectedMeshElements: () => void;
+  applyLoopCut: () => void;
+  setKnifeCutStart: (point: THREE.Vector3 | null) => void;
+  setKnifePreviewEnd: (point: THREE.Vector3 | null) => void;
+  applyKnifeCut: (end: THREE.Vector3, viewNormal: THREE.Vector3) => void;
+  bumpMeshEditRevision: () => void;
   clearActiveSelection: () => void;
   selectAllActive: () => void;
   toggleSelectedMeshVisibility: () => void;
@@ -126,7 +152,7 @@ function applyStructureRefresh(
     sceneRadius,
     restPose: nextRest,
     selectedBoneNames: selectedBoneNames.filter((n) => boneMap.has(n)),
-    selectedMeshUuids: selectedMeshUuids.filter((u) => meshParts.some((p) => p.uuid === u)),
+    selectedMeshUuids: selectedMeshUuids.filter((id) => meshParts.some((p) => p.id === id && isSelectableMeshPart(p))),
   });
 }
 
@@ -153,6 +179,12 @@ export const useModelStore = create<ModelState>((set, get) => ({
   selectedMeshUuids: [],
   meshSelectionAnchorUuid: null,
   viewportSelectionTarget: "bones",
+  meshElementMode: "object",
+  meshEditTool: "select",
+  meshElementSelection: null,
+  meshEditRevision: 0,
+  knifeCutStart: null,
+  knifePreviewEnd: null,
   sceneRadius: 1,
   wireframe: false,
   showSkeleton: true,
@@ -195,6 +227,12 @@ export const useModelStore = create<ModelState>((set, get) => ({
       selectedMeshUuids: [],
       meshSelectionAnchorUuid: null,
       viewportSelectionTarget: "bones",
+      meshElementMode: "object",
+      meshEditTool: "select",
+      meshElementSelection: null,
+      meshEditRevision: 0,
+      knifeCutStart: null,
+      knifePreviewEnd: null,
       sceneRadius,
       isLoading: false,
       loadingMessage: null,
@@ -215,6 +253,12 @@ export const useModelStore = create<ModelState>((set, get) => ({
       selectedMeshUuids: [],
       meshSelectionAnchorUuid: null,
       viewportSelectionTarget: "bones",
+      meshElementMode: "object",
+      meshEditTool: "select",
+      meshElementSelection: null,
+      meshEditRevision: 0,
+      knifeCutStart: null,
+      knifePreviewEnd: null,
       isLoading: false,
       loadingMessage: null,
     });
@@ -278,20 +322,20 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   clearBoneSelection: () => set({ selectedBoneNames: [], selectionAnchorName: null }),
 
-  pickMeshPart: (uuid, modifiers) => {
-    if (uuid === null) {
+  pickMeshPart: (id, modifiers) => {
+    if (id === null) {
       set({ selectedMeshUuids: [], meshSelectionAnchorUuid: null });
       return;
     }
     const { meshParts, selectedMeshUuids, meshSelectionAnchorUuid } = get();
     const ordered = getOrderedMeshUuids(meshParts);
-    if (!ordered.includes(uuid)) return;
+    if (!ordered.includes(id)) return;
     const anchor = meshSelectionAnchorUuid ?? selectedMeshUuids[selectedMeshUuids.length - 1] ?? null;
     const { selected, anchor: nextAnchor } = resolvePickSelection(
       ordered,
       selectedMeshUuids,
       anchor,
-      uuid,
+      id,
       modifiers ?? {}
     );
     set({ selectedMeshUuids: selected, meshSelectionAnchorUuid: nextAnchor });
@@ -308,12 +352,132 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   clearMeshSelection: () => set({ selectedMeshUuids: [], meshSelectionAnchorUuid: null }),
 
-  setViewportSelectionTarget: (target) => set({ viewportSelectionTarget: target }),
+  setViewportSelectionTarget: (target) =>
+    set({
+      viewportSelectionTarget: target,
+      meshElementSelection: null,
+      knifeCutStart: null,
+    }),
+
+  setMeshElementMode: (mode) =>
+    set({
+      meshElementMode: mode,
+      meshElementSelection: null,
+      meshEditTool: mode === "object" ? get().meshEditTool : "select",
+      knifeCutStart: null,
+    }),
+
+  setMeshEditTool: (tool) => set({ meshEditTool: tool, knifeCutStart: null }),
+
+  clearMeshElementSelection: () => set({ meshElementSelection: null }),
+
+  toggleMeshElement: (payload, additive) => {
+    const { meshParts, selectedMeshUuids } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh) return;
+
+    const current =
+      get().meshElementSelection?.meshUuid === mesh.uuid
+        ? get().meshElementSelection!
+        : emptyMeshElementSelection(mesh.uuid);
+
+    const next = { ...current, vertices: [...current.vertices], edges: [...current.edges], faces: [...current.faces] };
+
+    const toggleIn = <T,>(list: T[], value: T) => {
+      const idx = list.indexOf(value);
+      if (idx >= 0) list.splice(idx, 1);
+      else list.push(value);
+    };
+
+    if (payload.vertex != null) {
+      if (!additive) {
+        next.vertices = [payload.vertex];
+        next.edges = [];
+        next.faces = [];
+      } else toggleIn(next.vertices, payload.vertex);
+    }
+    if (payload.edge != null) {
+      if (!additive) {
+        next.edges = [payload.edge];
+        next.vertices = [];
+        next.faces = [];
+      } else toggleIn(next.edges, payload.edge);
+    }
+    if (payload.face != null) {
+      if (!additive) {
+        next.faces = [payload.face];
+        next.vertices = [];
+        next.edges = [];
+      } else toggleIn(next.faces, payload.face);
+    }
+
+    set({ meshElementSelection: next });
+  },
+
+  deleteSelectedMeshElements: () => {
+    const { meshParts, selectedMeshUuids, meshElementSelection, meshElementMode } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh || !meshElementSelection || meshElementSelection.meshUuid !== mesh.uuid) return;
+
+    if (meshElementMode === "face" && meshElementSelection.faces.length > 0) {
+      deleteMeshFaces(mesh, meshElementSelection.faces);
+    } else if (meshElementMode === "vertex" && meshElementSelection.vertices.length > 0) {
+      deleteMeshVertices(mesh, meshElementSelection.vertices);
+    } else if (meshElementMode === "edge" && meshElementSelection.edges.length > 0) {
+      deleteMeshEdges(mesh, meshElementSelection.edges);
+    } else return;
+
+    applyStructureRefresh(set, get);
+    set({
+      meshElementSelection: emptyMeshElementSelection(mesh.uuid),
+      meshEditRevision: get().meshEditRevision + 1,
+    });
+  },
+
+  applyLoopCut: () => {
+    const { meshParts, selectedMeshUuids, meshElementSelection } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh) return;
+    const seed = meshElementSelection?.edges[0];
+    if (!seed) return;
+    loopCutMesh(mesh, seed);
+    applyStructureRefresh(set, get);
+    set({
+      meshElementSelection: emptyMeshElementSelection(mesh.uuid),
+      meshEditRevision: get().meshEditRevision + 1,
+    });
+  },
+
+  setKnifeCutStart: (point) => set({ knifeCutStart: point }),
+
+  setKnifePreviewEnd: (point) => set({ knifePreviewEnd: point }),
+
+  applyKnifeCut: (end, viewNormal) => {
+    const { meshParts, selectedMeshUuids, knifeCutStart } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh || !knifeCutStart) return;
+    knifeCutMesh(mesh, knifeCutStart, end, viewNormal);
+    applyStructureRefresh(set, get);
+    set({
+      knifeCutStart: null,
+      knifePreviewEnd: null,
+      meshElementSelection: emptyMeshElementSelection(mesh.uuid),
+      meshEditRevision: get().meshEditRevision + 1,
+    });
+  },
+
+  bumpMeshEditRevision: () => set((s) => ({ meshEditRevision: s.meshEditRevision + 1 })),
 
   clearActiveSelection: () => {
     const { viewportSelectionTarget } = get();
     if (viewportSelectionTarget === "parts") {
-      set({ selectedMeshUuids: [], meshSelectionAnchorUuid: null });
+      set({
+        selectedMeshUuids: [],
+        meshSelectionAnchorUuid: null,
+        meshElementSelection: null,
+        knifeCutStart: null,
+        knifePreviewEnd: null,
+      });
     } else {
       set({ selectedBoneNames: [], selectionAnchorName: null });
     }
@@ -328,8 +492,17 @@ export const useModelStore = create<ModelState>((set, get) => ({
   toggleSelectedMeshVisibility: () => {
     const { meshParts, selectedMeshUuids } = get();
     if (selectedMeshUuids.length === 0) return;
-    const selected = meshParts.filter((p) => selectedMeshUuids.includes(p.uuid));
-    const anyVisible = selected.some((p) => p.mesh.visible);
+    const selected = meshParts.filter((p) => selectedMeshUuids.includes(p.id) && p.mesh);
+    const anyVisible = selected.some((p) => {
+      if (!p.mesh) return false;
+      if (p.kind === "primitive" && p.geometryGroupIndex != null) {
+        const group = p.mesh.geometry?.groups?.[p.geometryGroupIndex];
+        const materials = Array.isArray(p.mesh.material) ? p.mesh.material : [p.mesh.material];
+        const material = group ? materials[group.materialIndex ?? 0] : null;
+        return material ? material.visible !== false : p.mesh.visible;
+      }
+      return p.mesh.visible;
+    });
     setMeshPartsVisible(meshParts, selectedMeshUuids, !anyVisible);
     set({ meshParts: [...meshParts] });
   },
@@ -412,6 +585,11 @@ export const useModelStore = create<ModelState>((set, get) => ({
   requestFrameSelection: () => set((s) => ({ frameSelectionTick: s.frameSelectionTick + 1 })),
 }));
 
+/** Last selected mesh part — gizmo anchor and mesh edit target. */
+export function getPrimaryMeshPartId(ids: string[]): string | null {
+  return ids.length > 0 ? ids[ids.length - 1]! : null;
+}
+
 /** Last selected bone — gizmo anchor and transform panel reference. */
 export function getPrimaryBoneName(names: string[]): string | null {
   return names.length > 0 ? names[names.length - 1]! : null;
@@ -443,16 +621,16 @@ export function pickBoneFromClick(
 
 export function pickMeshPartFromClick(
   pickMeshPart: ModelState["pickMeshPart"],
-  uuid: string,
+  id: string,
   selectedMeshUuids: string[],
   e: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }
 ) {
   const additive = Boolean(e.ctrlKey || e.metaKey);
   const range = Boolean(e.shiftKey);
-  const isSelected = selectedMeshUuids.includes(uuid);
+  const isSelected = selectedMeshUuids.includes(id);
 
   if (range || additive) {
-    pickMeshPart(uuid, { additive, range });
+    pickMeshPart(id, { additive, range });
     return;
   }
 
@@ -461,5 +639,5 @@ export function pickMeshPartFromClick(
     return;
   }
 
-  pickMeshPart(uuid);
+  pickMeshPart(id);
 }

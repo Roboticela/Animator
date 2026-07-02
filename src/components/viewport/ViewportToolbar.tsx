@@ -60,8 +60,16 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
   const invertBoneSelection = useModelStore((s) => s.invertBoneSelection);
   const requestFrameCamera = useModelStore((s) => s.requestFrameCamera);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
+  const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
+  const meshElementMode = useModelStore((s) => s.meshElementMode);
   const model = useModelStore((s) => s.model);
-  const hasSelection = selectedBoneNames.length > 0;
+  const hasBoneSelection = selectedBoneNames.length > 0;
+  const hasPartSelection = selectedMeshUuids.length > 0;
+  const hasTransformSelection =
+    viewportSelectionTarget === "bones"
+      ? hasBoneSelection
+      : hasPartSelection && meshElementMode === "object";
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
@@ -72,7 +80,7 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
             variant={transformMode === mode ? "default" : "ghost"}
             size="icon"
             title={label}
-            disabled={!hasSelection}
+            disabled={!hasTransformSelection}
             onPress={() => setTransformMode(mode)}
           >
             <Icon className="h-4 w-4" />

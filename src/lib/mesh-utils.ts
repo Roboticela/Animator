@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import type { MeshPartInfo } from "@/types/model";
 
-function meshStats(mesh: THREE.Mesh, group?: THREE.BufferGeometryGroup) {
+type GeometryGroup = { start: number; count: number; materialIndex?: number };
+
+function meshStats(mesh: THREE.Mesh, group?: GeometryGroup) {
   const geom = mesh.geometry;
   let vertexCount = 0;
   let triangleCount = 0;
@@ -53,7 +55,7 @@ function addMeshNodes(mesh: THREE.Mesh, depth: number, parentId: string | null, 
       nodes.push({
         id: `${mesh.uuid}:g${index}`,
         uuid: mesh.uuid,
-        name: materialLabel(mesh, group.materialIndex) ?? `${baseName} · ${index + 1}`,
+        name: materialLabel(mesh, group.materialIndex ?? 0) ?? `${baseName} · ${index + 1}`,
         depth: depth + 1,
         parentId: folderId,
         parentUuid: folderId,
@@ -89,12 +91,34 @@ function addMeshNodes(mesh: THREE.Mesh, depth: number, parentId: string | null, 
 export function collectMeshParts(root: THREE.Object3D): MeshPartInfo[] {
   const nodes: MeshPartInfo[] = [];
 
+  const hasMeshDescendant = (obj: THREE.Object3D): boolean => {
+    let found = false;
+    obj.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) found = true;
+    });
+    return found;
+  };
+
   const visit = (obj: THREE.Object3D, depth: number, parentId: string | null) => {
     const mesh = obj as THREE.Mesh;
     if (mesh.isMesh) {
       addMeshNodes(mesh, depth, parentId, nodes);
       mesh.children.forEach((child) => visit(child, depth + 1, mesh.uuid));
       return;
+    }
+
+    if (!hasMeshDescendant(obj)) {
+      obj.children.forEach((child) => visit(child, depth, parentId));
+      return;
+    }
+
+    // Skip redundant wrappers that contain a single mesh — show the mesh directly.
+    if (obj.children.length === 1) {
+      const only = obj.children[0]!;
+      if ((only as THREE.Mesh).isMesh) {
+        visit(only, depth, parentId);
+        return;
+      }
     }
 
     const isBone = (obj as THREE.Bone).isBone;
@@ -122,7 +146,54 @@ export function collectMeshParts(root: THREE.Object3D): MeshPartInfo[] {
   };
 
   root.children.forEach((child) => visit(child, 0, null));
-  return nodes;
+  return pruneEmptyGroups(nodes);
+}
+
+/** Remove folder nodes that ended up with no children (e.g. bone chains without geometry). */
+function pruneEmptyGroups(nodes: MeshPartInfo[]): MeshPartInfo[] {
+  const childCount = new Map<string, number>();
+  for (const node of nodes) {
+    if (node.parentId) childCount.set(node.parentId, (childCount.get(node.parentId) ?? 0) + 1);
+  }
+
+  const removed = new Set<string>();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const node of nodes) {
+      if (node.kind !== "group" || removed.has(node.id)) continue;
+      if ((childCount.get(node.id) ?? 0) > 0) continue;
+      removed.add(node.id);
+      changed = true;
+      if (node.parentId) {
+        const next = (childCount.get(node.parentId) ?? 1) - 1;
+        if (next <= 0) childCount.delete(node.parentId);
+        else childCount.set(node.parentId, next);
+      }
+    }
+  }
+
+  if (removed.size === 0) return nodes;
+
+  const reparent = new Map<string, string | null>();
+  for (const node of nodes) {
+    if (!removed.has(node.id)) continue;
+    reparent.set(node.id, node.parentId);
+  }
+
+  const resolveParent = (parentId: string | null): string | null => {
+    let cur = parentId;
+    while (cur && removed.has(cur)) cur = reparent.get(cur) ?? null;
+    return cur;
+  };
+
+  return nodes
+    .filter((node) => !removed.has(node.id))
+    .map((node) => {
+      const nextParent = resolveParent(node.parentId);
+      if (nextParent === node.parentId) return node;
+      return { ...node, parentId: nextParent, parentUuid: nextParent };
+    });
 }
 
 export function isSelectableMeshPart(part: MeshPartInfo): boolean {
@@ -138,11 +209,15 @@ export function geometryGroupAtFace(geometry: THREE.BufferGeometry, faceIndex: n
   if (groups.length <= 1) return 0;
 
   const indexAttr = geometry.index;
-  const vertexIndex = indexAttr ? indexAttr.getX(faceIndex * 3) : faceIndex * 3;
+  const indexOffset = faceIndex * 3;
 
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
-    if (vertexIndex >= group.start && vertexIndex < group.start + group.count) return i;
+    if (indexAttr) {
+      if (indexOffset >= group.start && indexOffset < group.start + group.count) return i;
+      continue;
+    }
+    if (indexOffset >= group.start && indexOffset < group.start + group.count) return i;
   }
 
   return 0;

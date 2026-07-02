@@ -1,6 +1,7 @@
 import { Bone, Box, FileBox, Film, Layers3, Sparkles } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useModelStore } from "@/store/modelStore";
+import { isSelectableMeshPart } from "@/lib/mesh-utils";
 import { useAnimationStore } from "@/store/animationStore";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,7 @@ export function SceneInfoModal({ isOpen, onClose }: SceneInfoModalProps) {
           <div className="grid grid-cols-2 gap-2">
             <StatCard icon={Box} label="Meshes" value={stats.meshCount} />
             <StatCard icon={Sparkles} label="Skinned" value={stats.skinnedMeshCount} accent="secondary" />
-            <StatCard icon={Box} label="Parts (live)" value={meshParts.length} />
+            <StatCard icon={Box} label="Parts (live)" value={meshParts.filter(isSelectableMeshPart).length} />
             <StatCard icon={Layers3} label="Materials" value={stats.materialCount} />
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">

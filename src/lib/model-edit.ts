@@ -117,7 +117,7 @@ function setPrimitiveVisible(mesh: THREE.Mesh, groupIndex: number, visible: bool
   if (!group) return;
 
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-  const material = materials[group.materialIndex];
+  const material = materials[group.materialIndex ?? 0];
   if (material) material.visible = visible;
 }
 

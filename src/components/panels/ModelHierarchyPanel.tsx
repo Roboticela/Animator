@@ -1,14 +1,21 @@
 import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Box, ChevronDown, ChevronRight, Eye, EyeOff, Layers3, Search, Trash2, X } from "lucide-react";
+import { Bone, Box, ChevronDown, ChevronRight, Eye, EyeOff, Folder, Layers3, Search, Trash2, X } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { getBoneIcon } from "@/lib/bone-icons";
+import { isSelectableMeshPart } from "@/lib/mesh-utils";
+import type { MeshPartInfo } from "@/types/model";
 import { pickBoneFromClick, pickMeshPartFromClick, useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { boneHasKeyframes } from "@/lib/clip-builder";
 
-type ExplorerTab = "armatures" | "parts";
+type ExplorerTab = "armatures" | "mesh";
+
+const EXPLORER_TABS: { id: ExplorerTab; label: string; icon: LucideIcon; target: "bones" | "parts" }[] = [
+  { id: "armatures", label: "Armatures", icon: Bone, target: "bones" },
+  { id: "mesh", label: "Mesh", icon: Box, target: "parts" },
+];
 
 function Row({
   depth,
@@ -45,6 +52,104 @@ function Row({
   );
 }
 
+function filterPartTree(parts: MeshPartInfo[], query: string): MeshPartInfo[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return parts;
+
+  const byId = new Map(parts.map((p) => [p.id, p]));
+  const keep = new Set<string>();
+
+  for (const part of parts) {
+    if (!part.name.toLowerCase().includes(q)) continue;
+    keep.add(part.id);
+    let parentId = part.parentId;
+    while (parentId) {
+      keep.add(parentId);
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
+  }
+
+  return parts.filter((p) => keep.has(p.id));
+}
+
+function PartTree({
+  parts,
+  parentId,
+  depth,
+  collapsed,
+  toggleGroup,
+  selectedMeshSet,
+  pickMeshPart,
+  selectedMeshUuids,
+}: {
+  parts: MeshPartInfo[];
+  parentId: string | null;
+  depth: number;
+  collapsed: Set<string>;
+  toggleGroup: (id: string) => void;
+  selectedMeshSet: Set<string>;
+  pickMeshPart: ReturnType<typeof useModelStore.getState>["pickMeshPart"];
+  selectedMeshUuids: string[];
+}) {
+  const children = parts.filter((p) => p.parentId === parentId);
+  if (children.length === 0) return null;
+
+  return (
+    <>
+      {children.map((part) => {
+        if (part.kind === "group") {
+          const nested = parts.filter((p) => p.parentId === part.id);
+          if (nested.length === 0) return null;
+
+          const open = !collapsed.has(part.id);
+          return (
+            <div key={part.id}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(part.id)}
+                style={{ paddingLeft: 8 + depth * 12 }}
+                className="flex w-full items-center gap-1 rounded-md py-1 pr-2 text-left text-[11px] font-medium text-foreground-muted hover:bg-accent hover:text-foreground"
+              >
+                {open ? <ChevronDown className="h-3 w-3 flex-shrink-0" /> : <ChevronRight className="h-3 w-3 flex-shrink-0" />}
+                <Folder className="h-3.5 w-3.5 flex-shrink-0 text-foreground/40" />
+                <span className="min-w-0 flex-1 truncate">{part.name}</span>
+                {part.triangleCount > 0 && (
+                  <span className="flex-shrink-0 text-[10px] text-foreground-muted/70">{part.triangleCount} tris</span>
+                )}
+              </button>
+              {open && (
+                <PartTree
+                  parts={parts}
+                  parentId={part.id}
+                  depth={depth + 1}
+                  collapsed={collapsed}
+                  toggleGroup={toggleGroup}
+                  selectedMeshSet={selectedMeshSet}
+                  pickMeshPart={pickMeshPart}
+                  selectedMeshUuids={selectedMeshUuids}
+                />
+              )}
+            </div>
+          );
+        }
+
+        const hidden = part.mesh?.userData._partHidden === true;
+        return (
+          <Row
+            key={part.id}
+            depth={depth}
+            icon={hidden ? EyeOff : Box}
+            label={part.name}
+            selected={selectedMeshSet.has(part.id)}
+            dimmed={hidden}
+            onClick={(e) => pickMeshPartFromClick(pickMeshPart, part.id, selectedMeshUuids, e)}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export function ModelHierarchyPanel() {
   const model = useModelStore((s) => s.model);
   const meshParts = useModelStore((s) => s.meshParts);
@@ -59,19 +164,15 @@ export function ModelHierarchyPanel() {
   const setViewportSelectionTarget = useModelStore((s) => s.setViewportSelectionTarget);
   const activeClip = useAnimationStore((s) => s.clips.find((c) => c.id === s.activeClipId));
 
-  const tab: ExplorerTab = viewportSelectionTarget === "bones" ? "armatures" : "parts";
+  const tab: ExplorerTab = viewportSelectionTarget === "bones" ? "armatures" : "mesh";
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const selectedBoneSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
   const selectedMeshSet = useMemo(() => new Set(selectedMeshUuids), [selectedMeshUuids]);
   const groups = useMemo(() => model?.skeletonGroups ?? [], [model]);
-
-  const visibleMeshParts = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return meshParts;
-    return meshParts.filter((p) => p.name.toLowerCase().includes(q));
-  }, [meshParts, query]);
+  const visibleMeshParts = useMemo(() => filterPartTree(meshParts, query), [meshParts, query]);
+  const selectablePartCount = useMemo(() => meshParts.filter(isSelectableMeshPart).length, [meshParts]);
 
   if (!model) return null;
 
@@ -102,17 +203,18 @@ export function ModelHierarchyPanel() {
     <Panel title="Explorer" icon={<Layers3 className="h-3.5 w-3.5" />} noPadding bodyClassName="flex min-h-0 flex-col p-0">
       <div className="flex flex-shrink-0 flex-col gap-2 border-b border-border/50 px-2 py-2">
         <div className="flex gap-0.5 rounded-lg border border-border/50 bg-background-subtle p-0.5">
-          {(["armatures", "parts"] as const).map((id) => (
+          {EXPLORER_TABS.map(({ id, label, icon: Icon, target }) => (
             <button
               key={id}
               type="button"
-              onClick={() => setViewportSelectionTarget(id === "armatures" ? "bones" : "parts")}
+              onClick={() => setViewportSelectionTarget(target)}
               className={cn(
-                "flex-1 rounded-md py-1.5 text-[11px] font-medium capitalize transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-medium transition-colors",
                 tab === id ? "bg-card text-foreground shadow-sm" : "text-foreground-muted hover:text-foreground"
               )}
             >
-              {id}
+              <Icon className={cn("h-3.5 w-3.5", tab === id ? "text-primary" : "text-foreground/50")} />
+              {label}
             </button>
           ))}
         </div>
@@ -136,7 +238,7 @@ export function ModelHierarchyPanel() {
               </button>
             )}
           </div>
-          {tab === "parts" && (
+          {tab === "mesh" && (
             <button
               type="button"
               title="Toggle visibility"
@@ -200,25 +302,21 @@ export function ModelHierarchyPanel() {
           </>
         )}
 
-        {tab === "parts" && (
+        {tab === "mesh" && (
           <>
-            {meshParts.length === 0 && (
+            {selectablePartCount === 0 && (
               <p className="px-2 py-4 text-center text-xs text-foreground-muted">No mesh parts</p>
             )}
-            {visibleMeshParts.map((part) => {
-              const hidden = part.mesh.userData._partHidden === true;
-              return (
-                <Row
-                  key={part.uuid}
-                  depth={part.depth}
-                  icon={hidden ? EyeOff : Box}
-                  label={part.name}
-                  selected={selectedMeshSet.has(part.uuid)}
-                  dimmed={hidden}
-                  onClick={(e) => pickMeshPartFromClick(pickMeshPart, part.uuid, selectedMeshUuids, e)}
-                />
-              );
-            })}
+            <PartTree
+              parts={visibleMeshParts}
+              parentId={null}
+              depth={0}
+              collapsed={collapsed}
+              toggleGroup={toggleGroup}
+              selectedMeshSet={selectedMeshSet}
+              pickMeshPart={pickMeshPart}
+              selectedMeshUuids={selectedMeshUuids}
+            />
           </>
         )}
       </div>
