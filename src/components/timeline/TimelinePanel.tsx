@@ -107,11 +107,10 @@ export function TimelinePanel() {
         <TimelineRuler duration={duration || activeClip.duration} currentTime={currentTime} onScrub={seek} />
       </div>
 
-      {isEditable && selectedKeyframe && selectedEasing && (
+      {isEditable && (
         <KeyframeEffectsBar
-          boneName={selectedKeyframe.bone}
-          time={selectedKeyframe.time}
-          currentEasing={selectedEasing}
+          selectedKeyframe={selectedKeyframe}
+          currentEasing={selectedEasing ?? "linear"}
           hasNextKeyframe={hasNextKeyframe}
         />
       )}
