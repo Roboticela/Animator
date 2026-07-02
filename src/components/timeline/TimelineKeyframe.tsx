@@ -11,6 +11,7 @@ interface TimelineKeyframeProps {
   fps: number;
   selected: boolean;
   easing: KeyframeEasingId;
+  snapToFrames: boolean;
   onSelect: (modifiers: { ctrl: boolean; shift: boolean }) => void;
   onCommitMove: (newTime: number) => void;
   onDelete: () => void;
@@ -23,6 +24,7 @@ export function TimelineKeyframe({
   fps,
   selected,
   easing,
+  snapToFrames,
   onSelect,
   onCommitMove,
   onDelete,
@@ -52,7 +54,8 @@ export function TimelineKeyframe({
         if (!track) return;
         const rect = track.getBoundingClientRect();
         const localX = e.clientX - rect.left;
-        const t = snapTime(Math.max(0, Math.min(localX / pixelsPerSecond, duration)), fps);
+        const raw = Math.max(0, Math.min(localX / pixelsPerSecond, duration));
+        const t = snapToFrames ? snapTime(raw, fps) : raw;
         setDragTime(t);
       }}
       onPointerUp={() => {

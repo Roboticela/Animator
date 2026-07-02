@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Viewport3D } from "@/components/viewport/Viewport3D";
 import { BoneTreePanel } from "@/components/panels/BoneTreePanel";
 import { SceneInfoPanel } from "@/components/panels/SceneInfoPanel";
@@ -6,6 +6,7 @@ import { TransformInspector } from "@/components/panels/TransformInspector";
 import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
 import { TimelinePanel } from "@/components/timeline/TimelinePanel";
 import { StatusBar } from "@/components/layout/StatusBar";
+import { ResizeHandle } from "@/components/layout/ResizeHandle";
 import { useAnimationStore } from "@/store/animationStore";
 import { useModelStore } from "@/store/modelStore";
 import {
@@ -16,6 +17,13 @@ import {
   resetSelectedBones,
   setKeyframesForSelection,
 } from "@/lib/app-actions";
+import {
+  clampLayout,
+  loadLayoutPreferences,
+  LAYOUT_LIMITS,
+  saveLayoutPreferences,
+  type LayoutPreferences,
+} from "@/lib/layout-preferences";
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -32,6 +40,32 @@ export function AppShell() {
   const selectAllBones = useModelStore((s) => s.selectAllBones);
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
+
+  const [layout, setLayout] = useState<LayoutPreferences>(() => loadLayoutPreferences());
+  const leftAsideRef = useRef<HTMLElement>(null);
+  const rightAsideRef = useRef<HTMLElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  const patchLayout = useCallback((patch: Partial<LayoutPreferences>) => {
+    setLayout((prev) => clampLayout({ ...prev, ...patch }));
+  }, []);
+
+  useEffect(() => {
+    saveLayoutPreferences(layout);
+  }, [layout]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const ro = new ResizeObserver(() => {
+      const maxTimeline = Math.max(LAYOUT_LIMITS.timelineHeight.min, Math.floor(shell.clientHeight * 0.72));
+      setLayout((prev) =>
+        prev.timelineHeight > maxTimeline ? clampLayout({ ...prev, timelineHeight: maxTimeline }) : prev
+      );
+    });
+    ro.observe(shell);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -127,34 +161,88 @@ export function AppShell() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setTransformMode, togglePlay, stepFrame, toggleGizmoSpace, clearBoneSelection, selectAllBones, undo, redo]);
 
+  const timelineMaxHeight = () => {
+    const shell = shellRef.current;
+    if (!shell) return LAYOUT_LIMITS.timelineHeight.max;
+    return Math.max(LAYOUT_LIMITS.timelineHeight.min, Math.floor(shell.clientHeight * 0.72));
+  };
+
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden p-2 sm:gap-3 sm:p-4">
-      <div className="flex min-h-0 flex-[1.15] gap-2 sm:gap-4">
-        <aside className="flex w-64 flex-shrink-0 flex-col gap-2 sm:w-72 sm:gap-4">
-          <div className="min-h-0 flex-[1.3]">
+    <div ref={shellRef} className="flex h-full min-h-0 flex-col overflow-hidden p-2 sm:p-4">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside
+          ref={leftAsideRef}
+          className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
+          style={{ width: layout.leftWidth }}
+        >
+          <div className="min-h-0 overflow-hidden" style={{ flex: `${layout.leftSplit} 1 0` }}>
             <BoneTreePanel />
           </div>
-          <div className="min-h-0 flex-1">
+          <ResizeHandle
+            axis="vertical"
+            onDrag={(delta) => {
+              const total = leftAsideRef.current?.clientHeight ?? 0;
+              if (total <= 0) return;
+              const topPx = layout.leftSplit * total + delta;
+              patchLayout({ leftSplit: topPx / total });
+            }}
+          />
+          <div className="min-h-0 overflow-hidden" style={{ flex: `${1 - layout.leftSplit} 1 0` }}>
             <SceneInfoPanel />
           </div>
         </aside>
 
-        <main className="min-h-0 min-w-0 flex-1">
+        <ResizeHandle
+          axis="horizontal"
+          onDrag={(delta) => patchLayout({ leftWidth: layout.leftWidth + delta })}
+        />
+
+        <main className="min-h-0 min-w-[240px] flex-1 overflow-hidden">
           <Viewport3D />
         </main>
 
-        <aside className="flex w-72 flex-shrink-0 flex-col gap-2 sm:w-80 sm:gap-4">
-          <div className="min-h-0 flex-[1.4]">
+        <ResizeHandle
+          axis="horizontal"
+          onDrag={(delta) => patchLayout({ rightWidth: layout.rightWidth + delta })}
+        />
+
+        <aside
+          ref={rightAsideRef}
+          className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
+          style={{ width: layout.rightWidth }}
+        >
+          <div className="min-h-0 overflow-hidden" style={{ flex: `${layout.rightSplit} 1 0` }}>
             <AnimationLibraryPanel />
           </div>
-          <div className="min-h-0 flex-1">
+          <ResizeHandle
+            axis="vertical"
+            onDrag={(delta) => {
+              const total = rightAsideRef.current?.clientHeight ?? 0;
+              if (total <= 0) return;
+              const topPx = layout.rightSplit * total + delta;
+              patchLayout({ rightSplit: topPx / total });
+            }}
+          />
+          <div className="min-h-0 overflow-hidden" style={{ flex: `${1 - layout.rightSplit} 1 0` }}>
             <TransformInspector />
           </div>
         </aside>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1">
+      <ResizeHandle
+        axis="vertical"
+        onDrag={(delta) =>
+          patchLayout({
+            timelineHeight: Math.min(timelineMaxHeight(), layout.timelineHeight + delta),
+          })
+        }
+      />
+
+      <div
+        className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
+        style={{ height: layout.timelineHeight }}
+      >
+        <div className="min-h-0 flex-1 overflow-hidden">
           <TimelinePanel />
         </div>
         <StatusBar />

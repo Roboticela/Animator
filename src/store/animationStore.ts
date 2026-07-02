@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { ClipMeta, CustomClipData } from "@/types/model";
 import { buildClipFromData } from "@/lib/clip-builder";
+import { clampTimelineZoom, fitTimelineZoom, TIMELINE_ZOOM_DEFAULT } from "@/lib/timeline-zoom";
 import { useModelStore } from "@/store/modelStore";
 
 export type TransformMode = "translate" | "rotate" | "scale";
@@ -19,6 +20,7 @@ interface AnimationState {
   playRangeStart: number;
   playRangeEnd: number;
   timelineZoom: number;
+  timelineViewportWidth: number;
   timelineSelectedKeyframeCount: number;
   speed: number;
   currentTime: number;
@@ -47,6 +49,8 @@ interface AnimationState {
   setPlayRangeEnd: (time: number) => void;
   resetPlayRange: () => void;
   setTimelineZoom: (pixelsPerSecond: number) => void;
+  setTimelineViewportWidth: (width: number) => void;
+  fitTimelineToView: () => void;
   setTimelineSelectedKeyframeCount: (count: number) => void;
   setSpeed: (speed: number) => void;
   seek: (time: number) => void;
@@ -73,7 +77,8 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   loopInRange: true,
   playRangeStart: 0,
   playRangeEnd: 0,
-  timelineZoom: 80,
+  timelineZoom: TIMELINE_ZOOM_DEFAULT,
+  timelineViewportWidth: 400,
   timelineSelectedKeyframeCount: 0,
   speed: 1,
   currentTime: 0,
@@ -220,7 +225,12 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
     set({ playRangeStart: 0, playRangeEnd: duration });
   },
   setTimelineZoom: (pixelsPerSecond) => {
-    set({ timelineZoom: Math.max(24, Math.min(240, pixelsPerSecond)) });
+    set({ timelineZoom: clampTimelineZoom(pixelsPerSecond) });
+  },
+  setTimelineViewportWidth: (width) => set({ timelineViewportWidth: Math.max(0, width) }),
+  fitTimelineToView: () => {
+    const { duration, timelineViewportWidth } = get();
+    get().setTimelineZoom(fitTimelineZoom(duration, timelineViewportWidth));
   },
   setTimelineSelectedKeyframeCount: (count) => set({ timelineSelectedKeyframeCount: count }),
   setSpeed: (speed) => {

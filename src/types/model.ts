@@ -48,16 +48,8 @@ export interface ClipMeta {
 
 export type TransformProperty = "position" | "quaternion" | "scale";
 
-export type KeyframeEasingId =
-  | "linear"
-  | "easeIn"
-  | "easeOut"
-  | "easeInOut"
-  | "hold"
-  | "easeInBack"
-  | "easeOutBack"
-  | "bounce"
-  | "elastic";
+import type { KeyframeEasingId } from "@/lib/keyframe-easing";
+export type { KeyframeEasingId };
 
 export interface Keyframe {
   id: string;

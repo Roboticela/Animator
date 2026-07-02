@@ -1,9 +1,11 @@
 export const TIMELINE_LABEL_WIDTH = 148;
 export const TIMELINE_ROW_HEIGHT = 32;
 export const TIMELINE_RULER_HEIGHT = 32;
-export const TIMELINE_MIN_ZOOM = 24;
-export const TIMELINE_MAX_ZOOM = 240;
-export const TIMELINE_DEFAULT_ZOOM = 80;
+
+export {
+  TIMELINE_ZOOM_MIN as TIMELINE_MIN_ZOOM,
+  TIMELINE_ZOOM_DEFAULT as TIMELINE_DEFAULT_ZOOM,
+} from "@/lib/timeline-zoom";
 
 export interface TimelineKeyframeRef {
   bone: string;

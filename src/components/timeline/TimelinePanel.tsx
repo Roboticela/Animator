@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Layers } from "lucide-react";
-import { TimelineRuler } from "@/components/timeline/TimelineRuler";
+import { TimelineGrid } from "@/components/timeline/TimelineGrid";
+import { TimelinePlayhead } from "@/components/timeline/TimelinePlayhead";
+import { TimelinePlayRange } from "@/components/timeline/TimelinePlayRange";
 import { TimelineToolbar } from "@/components/timeline/TimelineToolbar";
 import { TimelineTrackLabel, TimelineTrackRow } from "@/components/timeline/TimelineTrackRow";
 import { useTimelineSelection } from "@/components/timeline/useTimelineSelection";
@@ -15,7 +17,6 @@ import {
   moveBoneKeyframe,
   moveBoneKeyframes,
   removeBoneTrack,
-  setClipDuration,
 } from "@/lib/clip-builder";
 import { duplicateClipAsCustom } from "@/lib/app-actions";
 import {
@@ -23,9 +24,11 @@ import {
   TIMELINE_RULER_HEIGHT,
   TIMELINE_ROW_HEIGHT,
   pxToTime,
+  snapTime,
   timeKey,
   timeToPx,
 } from "@/lib/timeline-utils";
+import { zoomTimelineByFactor } from "@/lib/timeline-zoom";
 
 export function TimelinePanel() {
   const clips = useAnimationStore((s) => s.clips);
@@ -40,9 +43,12 @@ export function TimelinePanel() {
   const selectedBoneSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
 
   const selection = useTimelineSelection();
-  const tracksScrollRef = useRef<HTMLDivElement>(null);
-  const rulerScrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const labelsScrollRef = useRef<HTMLDivElement>(null);
+  const setTimelineViewportWidth = useAnimationStore((s) => s.setTimelineViewportWidth);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const [snapToFrames, setSnapToFrames] = useState(true);
 
   const activeClip = clips.find((c) => c.id === activeClipId);
   const isEditable = activeClip?.source === "custom" && Boolean(activeClip.editable);
@@ -55,13 +61,51 @@ export function TimelinePanel() {
     [activeClip]
   );
 
-  const syncScroll = useCallback((source: "tracks" | "ruler") => {
-    const tracks = tracksScrollRef.current;
-    const ruler = rulerScrollRef.current;
-    if (!tracks || !ruler) return;
-    if (source === "tracks") ruler.scrollLeft = tracks.scrollLeft;
-    else tracks.scrollLeft = ruler.scrollLeft;
+  const syncLabelsScroll = useCallback((source: "main" | "labels") => {
+    const main = scrollRef.current;
+    const labels = labelsScrollRef.current;
+    if (!main || !labels) return;
+    if (source === "main") labels.scrollTop = main.scrollTop;
+    else main.scrollTop = labels.scrollTop;
   }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setTimelineViewportWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [setTimelineViewportWidth, activeClipId]);
+
+  useEffect(() => {
+    const root = panelRef.current;
+    if (!root) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const current = useAnimationStore.getState().timelineZoom;
+      const factor = e.deltaY < 0 ? 1.22 : 1 / 1.22;
+      useAnimationStore.getState().setTimelineZoom(zoomTimelineByFactor(current, factor));
+    };
+
+    const onGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    root.addEventListener("wheel", onWheel, { passive: false });
+    root.addEventListener("gesturestart", onGesture, { passive: false });
+    root.addEventListener("gesturechange", onGesture, { passive: false });
+
+    return () => {
+      root.removeEventListener("wheel", onWheel);
+      root.removeEventListener("gesturestart", onGesture);
+      root.removeEventListener("gesturechange", onGesture);
+    };
+  }, [activeClipId]);
 
   const handleSelectKeyframe = useCallback(
     (bone: string, time: number, mod: { ctrl: boolean; shift: boolean }) => {
@@ -123,8 +167,8 @@ export function TimelinePanel() {
     if (!isEditable || e.button !== 0) return;
     if ((e.target as HTMLElement).closest("[data-keyframe]")) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x0 = e.clientX - rect.left + e.currentTarget.scrollLeft;
-    const y0 = e.clientY - rect.top + e.currentTarget.scrollTop;
+    const x0 = e.clientX - rect.left;
+    const y0 = e.clientY - rect.top;
     setMarquee({ x0, y0, x1: x0, y1: y0 });
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -134,8 +178,8 @@ export function TimelinePanel() {
     const rect = e.currentTarget.getBoundingClientRect();
     setMarquee({
       ...marquee,
-      x1: e.clientX - rect.left + e.currentTarget.scrollLeft,
-      y1: e.clientY - rect.top + e.currentTarget.scrollTop,
+      x1: e.clientX - rect.left,
+      y1: e.clientY - rect.top,
     });
   };
 
@@ -165,9 +209,15 @@ export function TimelinePanel() {
   };
 
   const tracksMinHeight = Math.max(animatedBones.length * TIMELINE_ROW_HEIGHT, 120);
+  const totalContentHeight = TIMELINE_RULER_HEIGHT + tracksMinHeight;
+
+  const snapMove = (t: number) => (snapToFrames ? snapTime(t, fps) : timeKey(t));
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/80 to-background">
+    <div
+      ref={panelRef}
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card/90 to-background shadow-inner"
+    >
       <TimelineToolbar
         clipName={activeClip.name}
         isEditable={isEditable}
@@ -175,43 +225,27 @@ export function TimelinePanel() {
         selectedKeyframe={primary}
         currentEasing={selectedEasing}
         selectionCount={selection.count}
+        snapToFrames={snapToFrames}
+        onToggleSnap={() => setSnapToFrames((v) => !v)}
         onEditAsCustom={!isEditable ? () => duplicateClipAsCustom(activeClip) : undefined}
-        onSetDuration={
-          isEditable ? (d) => updateCustomClipData(activeClip.id, (data) => setClipDuration(data, d)) : undefined
-        }
         onDeleteSelection={deleteSelected}
         onClearSelection={() => selection.clear()}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex flex-shrink-0">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Sticky label column */}
+        <div className="flex flex-shrink-0 flex-col border-r border-border/40 bg-card/50" style={{ width: TIMELINE_LABEL_WIDTH }}>
           <div
-            className="flex flex-shrink-0 items-end border-r border-border/40 bg-card/40 px-2 pb-1 text-[10px] font-medium uppercase tracking-wide text-foreground-muted"
-            style={{ width: TIMELINE_LABEL_WIDTH, height: TIMELINE_RULER_HEIGHT }}
+            ref={labelsScrollRef}
+            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+            onScroll={() => syncLabelsScroll("labels")}
           >
-            Tracks
-          </div>
-          <div
-            ref={rulerScrollRef}
-            className="custom-scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
-            onScroll={() => syncScroll("ruler")}
-          >
-            <TimelineRuler
-              duration={clipDuration}
-              contentWidth={contentWidth}
-              pixelsPerSecond={timelineZoom}
-              fps={fps}
-              editable={isEditable}
-              onScrub={seek}
-            />
-          </div>
-        </div>
-
-        <div className="flex min-h-0 flex-1">
-          <div
-            className="custom-scrollbar flex-shrink-0 overflow-y-auto border-r border-border/40 bg-card/30"
-            style={{ width: TIMELINE_LABEL_WIDTH }}
-          >
+            <div
+              className="flex flex-shrink-0 items-end border-b border-border/30 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted"
+              style={{ height: TIMELINE_RULER_HEIGHT }}
+            >
+              Tracks
+            </div>
             {!isEditable && (
               <p className="p-2 text-[10px] leading-relaxed text-foreground-muted">Read-only — use Edit in toolbar.</p>
             )}
@@ -220,43 +254,61 @@ export function TimelinePanel() {
                 Pose bones and press K. Drag to box-select keyframes.
               </p>
             )}
-            {animatedBones.map((bone) => (
+            {animatedBones.map((bone, i) => (
               <TimelineTrackLabel
                 key={bone}
                 boneName={bone}
                 isSelectedBone={selectedBoneSet.has(bone)}
+                isAlternate={i % 2 === 1}
                 onSelectBone={() => pickBone(bone)}
                 onRemoveTrack={() => updateCustomClipData(activeClip.id, (d) => removeBoneTrack(d, bone))}
               />
             ))}
           </div>
+        </div>
 
-          <div
-            ref={tracksScrollRef}
-            className="custom-scrollbar relative min-h-0 min-w-0 flex-1 overflow-auto"
-            onScroll={() => syncScroll("tracks")}
-            onPointerDown={onMarqueePointerDown}
-            onPointerMove={onMarqueePointerMove}
-            onPointerUp={onMarqueePointerUp}
-            onClick={(e) => {
-              if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.trackCanvas) {
-                if (!e.shiftKey && !e.ctrlKey) selection.clear();
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
-                seek(pxToTime(x, timelineZoom));
-              }
-            }}
-          >
+        {/* Single unified scroll — ruler + tracks share one horizontal scrollbar */}
+        <div
+          ref={scrollRef}
+          className="custom-scrollbar relative min-h-0 min-w-0 flex-1 overflow-auto"
+          onScroll={() => syncLabelsScroll("main")}
+        >
+          <div style={{ width: contentWidth, minHeight: totalContentHeight }} className="relative">
+            <TimelinePlayRange
+              duration={clipDuration}
+              pixelsPerSecond={timelineZoom}
+              height={totalContentHeight}
+              editable={isEditable}
+              scrollRef={scrollRef}
+            />
+
+            <TimelineGrid
+              duration={clipDuration}
+              contentWidth={contentWidth}
+              pixelsPerSecond={timelineZoom}
+              totalHeight={totalContentHeight}
+              tracksTop={TIMELINE_RULER_HEIGHT}
+              scrollRef={scrollRef}
+              onScrub={seek}
+            />
+
             <div
-              data-track-canvas
-              style={{ width: contentWidth, minHeight: tracksMinHeight }}
-              className="relative h-full min-h-full"
+              className="relative z-[1]"
+              style={{ minHeight: tracksMinHeight, marginTop: TIMELINE_RULER_HEIGHT }}
+              onPointerDown={onMarqueePointerDown}
+              onPointerMove={onMarqueePointerMove}
+              onPointerUp={onMarqueePointerUp}
+              onClick={(e) => {
+                if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.trackCanvas) {
+                  if (!e.shiftKey && !e.ctrlKey) selection.clear();
+                  const scrollEl = scrollRef.current;
+                  if (!scrollEl) return;
+                  const rect = scrollEl.getBoundingClientRect();
+                  const x = e.clientX - rect.left + scrollEl.scrollLeft;
+                  seek(pxToTime(x, timelineZoom));
+                }
+              }}
             >
-              <div
-                className="pointer-events-none absolute top-0 z-20 w-0.5 bg-primary/60"
-                style={{ left: timeToPx(currentTime, timelineZoom), height: tracksMinHeight }}
-              />
-
               {marquee && (
                 <div
                   className="pointer-events-none absolute z-30 border border-primary/60 bg-primary/10"
@@ -269,23 +321,26 @@ export function TimelinePanel() {
                 />
               )}
 
-              {animatedBones.map((bone) => (
+              {animatedBones.map((bone, i) => (
                 <TimelineTrackRow
                   key={bone}
                   boneName={bone}
+                  isAlternate={i % 2 === 1}
                   times={activeClip.editable ? getBoneKeyframeTimes(activeClip.editable, bone) : []}
                   easings={activeClip.editable ? getBoneKeyframeEasings(activeClip.editable, bone) : new Map()}
                   duration={clipDuration}
                   contentWidth={contentWidth}
                   pixelsPerSecond={timelineZoom}
                   fps={fps}
+                  snapToFrames={snapToFrames}
                   isKeyframeSelected={(t) => selection.isSelected({ bone, time: t })}
                   onSelectKeyframe={(time, mod) => handleSelectKeyframe(bone, time, mod)}
                   onMoveKeyframe={(oldTime, newTime) => {
                     if (!activeClip.editable) return;
+                    const snapped = snapMove(newTime);
                     const selectedOnBone = selection.selectedRefs.filter((r) => r.bone === bone);
                     if (selectedOnBone.length > 1 && selection.isSelected({ bone, time: oldTime })) {
-                      const delta = newTime - oldTime;
+                      const delta = snapped - oldTime;
                       updateCustomClipData(activeClip.id, (data) =>
                         moveBoneKeyframes(
                           data,
@@ -303,8 +358,8 @@ export function TimelinePanel() {
                         }))
                       );
                     } else {
-                      updateCustomClipData(activeClip.id, (data) => moveBoneKeyframe(data, bone, oldTime, newTime));
-                      selection.selectOne({ bone, time: newTime });
+                      updateCustomClipData(activeClip.id, (data) => moveBoneKeyframe(data, bone, oldTime, snapped));
+                      selection.selectOne({ bone, time: snapped });
                     }
                   }}
                   onDeleteKeyframe={(time) => {
@@ -315,6 +370,15 @@ export function TimelinePanel() {
                 />
               ))}
             </div>
+
+            <TimelinePlayhead
+              time={currentTime}
+              duration={clipDuration}
+              pixelsPerSecond={timelineZoom}
+              height={totalContentHeight}
+              scrollRef={scrollRef}
+              onScrub={seek}
+            />
           </div>
         </div>
       </div>
