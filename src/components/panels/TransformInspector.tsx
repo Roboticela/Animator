@@ -51,12 +51,11 @@ export function TransformInspector() {
     [selectedBoneNames, boneMap]
   );
 
-  const targetObject = editingParts ? primaryMesh : bone;
-  const multiSelect = editingParts ? selectedMeshes.length > 1 : selectedBoneNames.length > 1;
+  const targetId = editingParts ? primaryMesh?.uuid ?? null : primaryName;
 
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (!targetObject) return;
+    if (!targetId) return;
     let raf = 0;
     let last = 0;
     const loop = (t: number) => {
@@ -68,7 +67,9 @@ export function TransformInspector() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [targetObject, selectedBoneNames, selectedMeshUuids, editingParts]);
+  }, [targetId, editingParts]);
+
+  const multiSelect = editingParts ? selectedMeshes.length > 1 : selectedBoneNames.length > 1;
 
   if (editingParts) {
     if (!primaryMesh || !primaryPart) {

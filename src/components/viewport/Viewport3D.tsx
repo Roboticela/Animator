@@ -11,6 +11,7 @@ import { SceneLighting } from "@/components/viewport/SceneLighting";
 import { ViewportCamera } from "@/components/viewport/ViewportCamera";
 import { AnimationDriver } from "@/components/viewport/AnimationDriver";
 import { MeshEditOverlayLayer } from "@/components/viewport/MeshEditOverlayLayer";
+import { MeshViewportInteractor } from "@/components/viewport/MeshViewportInteractor";
 import { useViewportThemeColors } from "@/hooks/useViewportThemeColors";
 
 function SceneAxes() {
@@ -50,6 +51,7 @@ function SceneContent() {
       {model && <SkeletonOverlay />}
       {model && <GizmoController />}
       {model && <MeshEditOverlayLayer />}
+      {model && <MeshViewportInteractor />}
       {model && showShadows && showGrid && (
         <ContactShadows position={[0, 0.001, 0]} opacity={0.4} scale={12} blur={2.2} far={4} />
       )}

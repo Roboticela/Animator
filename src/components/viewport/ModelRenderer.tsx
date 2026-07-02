@@ -1,12 +1,8 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import { useThree, type ThreeEvent } from "@react-three/fiber";
-import { findMeshPartFromHit, isSelectableMeshPart } from "@/lib/mesh-utils";
-import { handleMeshEditPointerDown, handleMeshEditPointerMove } from "@/lib/mesh-edit/pointer";
-import { pickMeshPartFromClick, useModelStore } from "@/store/modelStore";
+import { useModelStore } from "@/store/modelStore";
 
 const HIGHLIGHT = new THREE.Color("#38bdf8");
-const noopRaycast = () => {};
 
 export function ModelRenderer() {
   const model = useModelStore((s) => s.model);
@@ -17,16 +13,6 @@ export function ModelRenderer() {
   const flatShading = useModelStore((s) => s.flatShading);
   const doubleSided = useModelStore((s) => s.doubleSided);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
-  const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
-  const meshElementMode = useModelStore((s) => s.meshElementMode);
-  const pickMeshPart = useModelStore((s) => s.pickMeshPart);
-  const { camera } = useThree();
-
-  const selectableById = useMemo(
-    () => new Map(meshParts.filter(isSelectableMeshPart).map((p) => [p.id, p])),
-    [meshParts]
-  );
-
   const selectedParts = useMemo(
     () => meshParts.filter((p) => selectedMeshUuids.includes(p.id) && p.mesh),
     [meshParts, selectedMeshUuids]
@@ -57,12 +43,12 @@ export function ModelRenderer() {
 
       materials.forEach((m, materialIndex) => {
         const material = m as THREE.MeshStandardMaterial;
-        if (!material) return;
+        if (!material || !("emissive" in material) || !(material.emissive instanceof THREE.Color)) return;
         if ("wireframe" in material) material.wireframe = wireframe;
         if ("flatShading" in material) material.flatShading = flatShading;
         if ("side" in material) material.side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
 
-        if (!material.userData._baseEmissive && "emissive" in material) {
+        if (!material.userData._baseEmissive) {
           material.userData._baseEmissive = material.emissive.clone();
           material.userData._baseEmissiveIntensity = material.emissiveIntensity ?? 0;
         }
@@ -73,11 +59,11 @@ export function ModelRenderer() {
         const primitiveSelected =
           selectedWhole || groupIndices.some((index) => selectedPrimitiveIndices.has(index));
 
-        if (primitiveSelected && "emissive" in material) {
+        if (primitiveSelected) {
           material.emissive.copy(HIGHLIGHT);
           material.emissiveIntensity = 0.22;
-        } else if (material.userData._baseEmissive && "emissive" in material) {
-          material.emissive.copy(material.userData._baseEmissive as THREE.Color);
+        } else if (material.userData._baseEmissive instanceof THREE.Color) {
+          material.emissive.copy(material.userData._baseEmissive);
           material.emissiveIntensity = material.userData._baseEmissiveIntensity ?? 0;
         }
 
@@ -86,32 +72,7 @@ export function ModelRenderer() {
     });
   }, [model, wireframe, showShadows, showMesh, flatShading, doubleSided, selectedParts]);
 
-  const onMeshClick = (e: ThreeEvent<MouseEvent>) => {
-    if (viewportSelectionTarget !== "parts") return;
-    const mesh = e.object as THREE.Mesh;
-    if (mesh.isMesh && handleMeshEditPointerDown(e, mesh, camera)) return;
-
-    if (meshElementMode !== "object") return;
-    const part = findMeshPartFromHit(e.object, e.faceIndex ?? undefined, selectableById);
-    if (!part) return;
-    e.stopPropagation();
-    pickMeshPartFromClick(pickMeshPart, part.id, selectedMeshUuids, e.nativeEvent);
-  };
-
-  const onMeshPointerMove = (e: ThreeEvent<PointerEvent>) => {
-    if (viewportSelectionTarget !== "parts") return;
-    const mesh = e.object as THREE.Mesh;
-    if (mesh.isMesh) handleMeshEditPointerMove(e, mesh);
-  };
-
   if (!model) return null;
 
-  return (
-    <primitive
-      object={model.object3D}
-      onClick={viewportSelectionTarget === "parts" ? onMeshClick : undefined}
-      onPointerMove={viewportSelectionTarget === "parts" ? onMeshPointerMove : undefined}
-      raycast={viewportSelectionTarget === "parts" ? undefined : noopRaycast}
-    />
-  );
+  return <primitive object={model.object3D} raycast={() => {}} />;
 }

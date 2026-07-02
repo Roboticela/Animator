@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Line } from "@react-three/drei";
 import { useModelStore } from "@/store/modelStore";
 import { getEditMeshFromParts } from "@/lib/mesh-edit/operations";
-import { buildMeshTopology } from "@/lib/mesh-edit/topology";
+import { readMeshTopology } from "@/lib/mesh-edit/topology";
 import { MeshEditOverlay } from "@/components/viewport/MeshEditOverlay";
 
 export function MeshEditOverlayLayer() {
@@ -11,21 +11,23 @@ export function MeshEditOverlayLayer() {
   const meshParts = useModelStore((s) => s.meshParts);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
   const meshElementSelection = useModelStore((s) => s.meshElementSelection);
-  const knifeCutStart = useModelStore((s) => s.knifeCutStart);
   const meshEditRevision = useModelStore((s) => s.meshEditRevision);
+  const knifeCutStart = useModelStore((s) => s.knifeCutStart);
   const knifePreviewEnd = useModelStore((s) => s.knifePreviewEnd);
 
-  const mesh = useMemo(
-    () => getEditMeshFromParts(meshParts, selectedMeshUuids),
-    [meshParts, selectedMeshUuids, meshEditRevision]
-  );
+  const active = viewportSelectionTarget === "parts" && meshElementMode !== "object";
 
-  const topology = useMemo(() => (mesh ? buildMeshTopology(mesh) : null), [mesh, meshEditRevision]);
+  const mesh = useMemo(() => {
+    if (!active) return null;
+    return getEditMeshFromParts(meshParts, selectedMeshUuids);
+  }, [active, meshParts, selectedMeshUuids]);
 
-  const active =
-    viewportSelectionTarget === "parts" && meshElementMode !== "object" && mesh && topology;
+  const topology = useMemo(() => {
+    if (!mesh) return null;
+    return readMeshTopology(mesh);
+  }, [mesh, meshEditRevision]);
 
-  if (!active) return null;
+  if (!active || !mesh || !topology) return null;
 
   return (
     <group>

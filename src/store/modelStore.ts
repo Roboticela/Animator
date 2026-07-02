@@ -27,6 +27,7 @@ import {
   getEditMeshFromParts,
   knifeCutMesh,
   loopCutMesh,
+  separateMeshByFaceSelection,
 } from "@/lib/mesh-edit/operations";
 
 export type ViewportSelectionTarget = "bones" | "parts";
@@ -92,8 +93,10 @@ interface ModelState {
   setMeshElementMode: (mode: MeshElementMode) => void;
   setMeshEditTool: (tool: MeshEditTool) => void;
   clearMeshElementSelection: () => void;
+  setMeshElement: (payload: { vertex?: number; edge?: string; face?: number }) => void;
   toggleMeshElement: (payload: { vertex?: number; edge?: string; face?: number }, additive: boolean) => void;
   deleteSelectedMeshElements: () => void;
+  separateSelectedMeshFaces: () => void;
   applyLoopCut: () => void;
   setKnifeCutStart: (point: THREE.Vector3 | null) => void;
   setKnifePreviewEnd: (point: THREE.Vector3 | null) => void;
@@ -338,7 +341,15 @@ export const useModelStore = create<ModelState>((set, get) => ({
       id,
       modifiers ?? {}
     );
-    set({ selectedMeshUuids: selected, meshSelectionAnchorUuid: nextAnchor });
+    const prevEditMesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    const nextEditMesh = getEditMeshFromParts(meshParts, selected);
+    const clearElements =
+      !prevEditMesh || !nextEditMesh || prevEditMesh.uuid !== nextEditMesh.uuid;
+    set({
+      selectedMeshUuids: selected,
+      meshSelectionAnchorUuid: nextAnchor,
+      ...(clearElements ? { meshElementSelection: null } : {}),
+    });
   },
 
   selectAllMeshParts: () => {
@@ -370,6 +381,20 @@ export const useModelStore = create<ModelState>((set, get) => ({
   setMeshEditTool: (tool) => set({ meshEditTool: tool, knifeCutStart: null }),
 
   clearMeshElementSelection: () => set({ meshElementSelection: null }),
+
+  setMeshElement: (payload) => {
+    const { meshParts, selectedMeshUuids } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh) return;
+    set({
+      meshElementSelection: {
+        meshUuid: mesh.uuid,
+        vertices: payload.vertex != null ? [payload.vertex] : [],
+        edges: payload.edge != null ? [payload.edge] : [],
+        faces: payload.face != null ? [payload.face] : [],
+      },
+    });
+  },
 
   toggleMeshElement: (payload, additive) => {
     const { meshParts, selectedMeshUuids } = get();
@@ -430,6 +455,22 @@ export const useModelStore = create<ModelState>((set, get) => ({
     applyStructureRefresh(set, get);
     set({
       meshElementSelection: emptyMeshElementSelection(mesh.uuid),
+      meshEditRevision: get().meshEditRevision + 1,
+    });
+  },
+
+  separateSelectedMeshFaces: () => {
+    const { meshParts, selectedMeshUuids, meshElementSelection, meshElementMode } = get();
+    const mesh = getEditMeshFromParts(meshParts, selectedMeshUuids);
+    if (!mesh || meshElementMode !== "face" || !meshElementSelection || meshElementSelection.meshUuid !== mesh.uuid) {
+      return;
+    }
+    if (meshElementSelection.faces.length === 0) return;
+    const separated = separateMeshByFaceSelection(mesh, meshElementSelection.faces);
+    if (!separated) return;
+    applyStructureRefresh(set, get);
+    set({
+      meshElementSelection: null,
       meshEditRevision: get().meshEditRevision + 1,
     });
   },

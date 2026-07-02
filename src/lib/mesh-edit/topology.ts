@@ -24,7 +24,60 @@ export function ensureEditableGeometry(mesh: THREE.Mesh): THREE.BufferGeometry {
     mesh.geometry = nonIndexed;
     geometry = nonIndexed;
   }
+  invalidateMeshTopology(mesh);
   return geometry;
+}
+
+/** Read topology without mutating mesh geometry (safe during React render). */
+export function readMeshTopology(mesh: THREE.Mesh): MeshTopology | null {
+  const geometry = mesh.geometry;
+  if (!(geometry instanceof THREE.BufferGeometry)) return null;
+
+  const position = geometry.getAttribute("position");
+  if (!position) return null;
+
+  const cached = topologyCache.get(geometry);
+  if (cached && cached.meshUuid === mesh.uuid) return cached;
+
+  const index = geometry.getIndex();
+  const faces: Array<[number, number, number]> = [];
+  const edgeFaces = new Map<string, number[]>();
+
+  if (index) {
+    for (let f = 0; f < index.count / 3; f++) {
+      const v0 = index.getX(f * 3);
+      const v1 = index.getX(f * 3 + 1);
+      const v2 = index.getX(f * 3 + 2);
+      faces.push([v0, v1, v2]);
+      for (const key of [edgeKey(v0, v1), edgeKey(v1, v2), edgeKey(v2, v0)]) {
+        const list = edgeFaces.get(key) ?? [];
+        list.push(f);
+        edgeFaces.set(key, list);
+      }
+    }
+  } else {
+    for (let f = 0; f < position.count / 3; f++) {
+      const v0 = f * 3;
+      const v1 = f * 3 + 1;
+      const v2 = f * 3 + 2;
+      faces.push([v0, v1, v2]);
+      for (const key of [edgeKey(v0, v1), edgeKey(v1, v2), edgeKey(v2, v0)]) {
+        const list = edgeFaces.get(key) ?? [];
+        list.push(f);
+        edgeFaces.set(key, list);
+      }
+    }
+  }
+
+  const topology: MeshTopology = {
+    meshUuid: mesh.uuid,
+    faceCount: faces.length,
+    vertexCount: position.count,
+    faces,
+    edgeFaces,
+  };
+  topologyCache.set(geometry, topology);
+  return topology;
 }
 
 export function buildMeshTopology(mesh: THREE.Mesh): MeshTopology {
@@ -48,14 +101,14 @@ export function buildMeshTopology(mesh: THREE.Mesh): MeshTopology {
     }
   }
 
+  const position = geometry.getAttribute("position");
   const topology: MeshTopology = {
     meshUuid: mesh.uuid,
     faceCount: faces.length,
-    vertexCount: geometry.getAttribute("position").count,
+    vertexCount: position?.count ?? 0,
     faces,
     edgeFaces,
   };
-  topologyCache.delete(geometry);
   topologyCache.set(geometry, topology);
   return topology;
 }

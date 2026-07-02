@@ -53,7 +53,6 @@ export function GizmoController() {
   }, [meshParts, primaryPartId]);
 
   const gizmoObject = pickingBones ? primaryBone : pickingParts ? primaryMesh : undefined;
-  const gizmoMeshKeys = useMemo(() => selectedMeshes.map((m) => m.uuid), [selectedMeshes]);
 
   const controlsRef = useRef<TransformControlsImpl>(null);
   const boneSnapshots = useRef<Map<string, BoneTransformSnapshot>>(new Map());
@@ -164,11 +163,16 @@ export function GizmoController() {
     meshSnapshots.current.clear();
   };
 
+  const handleObjectChange = () => {
+    if (!isDragging.current) return;
+    syncSecondary();
+  };
+
   if (!gizmoObject) return null;
 
   return (
     <TransformControls
-      key={pickingBones ? `bone-${primaryName}` : `mesh-${gizmoMeshKeys.join(",")}`}
+      key={pickingBones ? `bone-${primaryName}` : `mesh-${primaryMesh?.uuid ?? "none"}`}
       ref={controlsRef}
       object={gizmoObject}
       mode={mode}
@@ -176,7 +180,7 @@ export function GizmoController() {
       space={gizmoSpace}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      onObjectChange={syncSecondary}
+      onObjectChange={handleObjectChange}
     />
   );
 }

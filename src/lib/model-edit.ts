@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import type { BoneInfo, MeshPartInfo, ModelData, SkeletonGroup } from "@/types/model";
 import { collectSkeletonGroups, computeSceneStats } from "@/lib/bone-utils";
-import { collectMeshParts } from "@/lib/mesh-utils";
+import { collectMeshParts, isSelectableMeshPart } from "@/lib/mesh-utils";
 import { removeBoneTrack } from "@/lib/clip-builder";
 import { useAnimationStore } from "@/store/animationStore";
+import { ensureEditableGeometry, invalidateMeshTopology } from "@/lib/mesh-edit/topology";
 
 function disposeMesh(mesh: THREE.Mesh) {
   mesh.geometry?.dispose();
@@ -46,24 +47,94 @@ export function refreshModelStructure(model: ModelData) {
 
 export function removeMeshPartsFromScene(model: ModelData, partIds: string[]): string[] {
   const want = new Set(partIds);
-  const meshUuids = new Set<string>();
   const parts = collectMeshParts(model.object3D);
+  const selectedParts = parts.filter((p) => want.has(p.id) && isSelectableMeshPart(p) && p.mesh);
 
-  for (const part of parts) {
-    if (!want.has(part.id) || !part.mesh) continue;
-    meshUuids.add(part.mesh.uuid);
+  const meshesToRemoveWhole = new Set<string>();
+  const primitiveRemovals = new Map<string, Set<number>>();
+
+  for (const part of selectedParts) {
+    const mesh = part.mesh!;
+    if (part.kind === "primitive" && part.geometryGroupIndex != null) {
+      if (meshesToRemoveWhole.has(mesh.uuid)) continue;
+      const groups = primitiveRemovals.get(mesh.uuid) ?? new Set<number>();
+      groups.add(part.geometryGroupIndex);
+      primitiveRemovals.set(mesh.uuid, groups);
+      continue;
+    }
+    meshesToRemoveWhole.add(mesh.uuid);
+    primitiveRemovals.delete(mesh.uuid);
   }
 
   const removed: string[] = [];
+  const meshByUuid = new Map<string, THREE.Mesh>();
+  model.object3D.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh) meshByUuid.set(mesh.uuid, mesh);
+  });
+
+  for (const [meshUuid, groupIndices] of primitiveRemovals) {
+    if (meshesToRemoveWhole.has(meshUuid)) continue;
+    const mesh = meshByUuid.get(meshUuid);
+    if (!mesh) continue;
+
+    const sorted = [...groupIndices].sort((a, b) => b - a);
+    let meshEmpty = false;
+    for (const groupIndex of sorted) {
+      if (!removeGeometryGroup(mesh, groupIndex)) {
+        meshEmpty = true;
+        break;
+      }
+      removed.push(`${meshUuid}:g${groupIndex}`);
+    }
+    if (meshEmpty) meshesToRemoveWhole.add(meshUuid);
+  }
+
   const targets: THREE.Object3D[] = [];
   model.object3D.traverse((obj) => {
-    if (meshUuids.has(obj.uuid) && (obj as THREE.Mesh).isMesh) targets.push(obj);
+    if (meshesToRemoveWhole.has(obj.uuid) && (obj as THREE.Mesh).isMesh) targets.push(obj);
   });
   targets.forEach((obj) => {
     removed.push(obj.uuid);
     removeObjectFromParent(obj);
   });
   return removed;
+}
+
+/** Remove one material/geometry group from a multi-group mesh. Returns false when the mesh becomes empty. */
+function removeGeometryGroup(mesh: THREE.Mesh, groupIndex: number): boolean {
+  const geometry = ensureEditableGeometry(mesh);
+  const groups = [...(geometry.groups?.filter((g) => g.count > 0) ?? [])];
+  if (groupIndex < 0 || groupIndex >= groups.length) return true;
+
+  const index = geometry.getIndex();
+  if (!index) return false;
+
+  const group = groups[groupIndex]!;
+  const removeStart = group.start;
+  const removeCount = group.count;
+
+  const newIndices: number[] = [];
+  for (let i = 0; i < index.count; i++) {
+    if (i >= removeStart && i < removeStart + removeCount) continue;
+    newIndices.push(index.getX(i));
+  }
+  if (newIndices.length === 0) return false;
+
+  geometry.setIndex(newIndices);
+  geometry.groups = groups
+    .filter((_, i) => i !== groupIndex)
+    .map((g) => ({
+      materialIndex: g.materialIndex,
+      start: g.start > removeStart ? g.start - removeCount : g.start,
+      count: g.count,
+    }));
+
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  invalidateMeshTopology(mesh);
+  return true;
 }
 
 export function removeBonesFromScene(group: SkeletonGroup, boneUuids: string[]): string[] {

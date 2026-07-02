@@ -178,10 +178,6 @@ export function ModelHierarchyPanel() {
 
   const selectionCount = tab === "armatures" ? selectedBoneNames.length : selectedMeshUuids.length;
 
-  const confirmRemove = (message: string, action: () => void) => {
-    if (window.confirm(message)) action();
-  };
-
   const toggleGroup = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -192,11 +188,8 @@ export function ModelHierarchyPanel() {
   };
 
   const onDelete = () => {
-    if (tab === "armatures") {
-      confirmRemove(`Delete ${selectedBoneNames.length} bone(s)?`, removeSelectedBones);
-    } else {
-      confirmRemove(`Delete ${selectedMeshUuids.length} part(s)?`, removeSelectedMeshParts);
-    }
+    if (tab === "armatures") removeSelectedBones();
+    else removeSelectedMeshParts();
   };
 
   return (

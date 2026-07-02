@@ -243,3 +243,80 @@ export function getEditMeshFromParts(meshParts: { id: string; mesh?: THREE.Mesh 
   const part = meshParts.find((p) => p.id === lastId);
   return part?.mesh ?? null;
 }
+
+function buildGeometryFromFaces(geometry: THREE.BufferGeometry, faceIndices: number[]): THREE.BufferGeometry | null {
+  const index = geometry.getIndex();
+  const position = geometry.getAttribute("position");
+  if (!index || !position || faceIndices.length === 0) return null;
+
+  const selected = new Set(faceIndices);
+  const picked: number[] = [];
+  for (let f = 0; f < index.count / 3; f++) {
+    if (!selected.has(f)) continue;
+    picked.push(index.getX(f * 3), index.getX(f * 3 + 1), index.getX(f * 3 + 2));
+  }
+  if (picked.length === 0) return null;
+
+  const remap = new Map<number, number>();
+  const newPositions: number[] = [];
+  const newIndices: number[] = [];
+  for (const vi of picked) {
+    if (!remap.has(vi)) {
+      remap.set(vi, newPositions.length / 3);
+      newPositions.push(position.getX(vi), position.getY(vi), position.getZ(vi));
+    }
+    newIndices.push(remap.get(vi)!);
+  }
+
+  const result = new THREE.BufferGeometry();
+  result.setAttribute("position", new THREE.Float32BufferAttribute(newPositions, 3));
+  result.setIndex(newIndices);
+  result.computeVertexNormals();
+  result.computeBoundingBox();
+  result.computeBoundingSphere();
+  return result;
+}
+
+function cloneMeshMaterials(material: THREE.Material | THREE.Material[]) {
+  if (Array.isArray(material)) return material.map((m) => m.clone());
+  return material.clone();
+}
+
+/** Split selected faces into a new sibling mesh; removes them from the source mesh. */
+export function separateMeshByFaceSelection(mesh: THREE.Mesh, faceIndices: number[]): THREE.Mesh | null {
+  if (faceIndices.length === 0) return null;
+
+  const geometry = ensureEditableGeometry(mesh);
+  const topology = buildMeshTopology(mesh);
+  const selected = new Set(faceIndices);
+  const remainingFaces: number[] = [];
+  for (let f = 0; f < topology.faceCount; f++) {
+    if (!selected.has(f)) remainingFaces.push(f);
+  }
+  if (remainingFaces.length === 0 || selected.size === 0) return null;
+
+  const separatedGeometry = buildGeometryFromFaces(geometry, faceIndices);
+  if (!separatedGeometry) return null;
+
+  const skinned = (mesh as THREE.SkinnedMesh).isSkinnedMesh ? (mesh as THREE.SkinnedMesh) : null;
+  const separated: THREE.Mesh = skinned
+    ? new THREE.SkinnedMesh(separatedGeometry, cloneMeshMaterials(mesh.material))
+    : new THREE.Mesh(separatedGeometry, cloneMeshMaterials(mesh.material));
+
+  separated.name = `${mesh.name || "Mesh"}_separated`;
+  if (skinned && separated instanceof THREE.SkinnedMesh) {
+    separated.bind(skinned.skeleton, skinned.bindMatrix);
+  }
+
+  const parent = mesh.parent;
+  if (!parent) return null;
+  parent.add(separated);
+  separated.position.copy(mesh.position);
+  separated.quaternion.copy(mesh.quaternion);
+  separated.scale.copy(mesh.scale);
+  separated.castShadow = mesh.castShadow;
+  separated.receiveShadow = mesh.receiveShadow;
+
+  deleteMeshFaces(mesh, faceIndices);
+  return separated;
+}

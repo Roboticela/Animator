@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { Mesh } from "three";
 import type { MeshElementSelection } from "@/lib/mesh-edit/types";
@@ -64,6 +64,14 @@ export function MeshEditOverlay({ mesh, topology, selection }: MeshEditOverlayPr
     geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     return geom;
   }, [mesh, selection?.faces, topology]);
+
+  useEffect(() => {
+    return () => {
+      vertexGeometry?.dispose();
+      edgeGeometry?.dispose();
+      faceGeometry?.dispose();
+    };
+  }, [vertexGeometry, edgeGeometry, faceGeometry]);
 
   return (
     <group>

@@ -38,7 +38,8 @@ export function pickMeshElementAtPoint(
   faceIndex?: number
 ): MeshPickHit | null {
   if (mode === "face") {
-    return { face: faceIndex ?? 0, point: point.clone() };
+    if (faceIndex == null || faceIndex < 0) return null;
+    return { face: faceIndex, point: point.clone() };
   }
 
   if (mode === "vertex") {

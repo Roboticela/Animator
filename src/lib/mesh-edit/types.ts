@@ -1,5 +1,5 @@
 export type MeshElementMode = "object" | "vertex" | "edge" | "face";
-export type MeshEditTool = "select" | "knife" | "loopCut" | "delete";
+export type MeshEditTool = "select" | "knife" | "loopCut" | "delete" | "separate";
 
 export interface MeshElementSelection {
   meshUuid: string;

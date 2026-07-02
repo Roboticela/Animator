@@ -25,6 +25,7 @@ import {
   SplitSquareHorizontal,
   Trash2,
   Triangle,
+  UnfoldVertical,
   Video,
   Waypoints,
   X,
@@ -83,7 +84,9 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
   const setMeshElementMode = useModelStore((s) => s.setMeshElementMode);
   const setMeshEditTool = useModelStore((s) => s.setMeshEditTool);
   const deleteSelectedMeshElements = useModelStore((s) => s.deleteSelectedMeshElements);
+  const separateSelectedMeshFaces = useModelStore((s) => s.separateSelectedMeshFaces);
   const clearMeshElementSelection = useModelStore((s) => s.clearMeshElementSelection);
+  const meshElementSelection = useModelStore((s) => s.meshElementSelection);
 
   const ELEMENT_MODES: { mode: MeshElementMode; icon: typeof Box; label: string }[] = [
     { mode: "object", icon: Box, label: "Object (1)" },
@@ -96,6 +99,7 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
     { tool: "select", icon: MousePointer2, label: "Select" },
     { tool: "knife", icon: Scissors, label: "Knife — click start & end on mesh" },
     { tool: "loopCut", icon: SplitSquareHorizontal, label: "Loop cut — click an edge" },
+    { tool: "separate", icon: UnfoldVertical, label: "Separate — split selected faces into new mesh" },
     { tool: "delete", icon: Trash2, label: "Delete element" },
   ];
 
@@ -263,6 +267,15 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
                     </FeedbackButton>
                   ))}
                 </div>
+                <FeedbackButton
+                  variant="ghost"
+                  size="icon"
+                  title="Separate selected faces into a new mesh (face mode)"
+                  disabled={!hasSelection || meshElementMode !== "face" || (meshElementSelection?.faces.length ?? 0) === 0}
+                  onPress={() => separateSelectedMeshFaces()}
+                >
+                  <UnfoldVertical className="h-4 w-4" />
+                </FeedbackButton>
                 <FeedbackButton
                   variant="ghost"
                   size="icon"
