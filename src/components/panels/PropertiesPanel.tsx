@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Film, Move3d } from "lucide-react";
+import { Clapperboard, Move3d } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { TransformInspector } from "@/components/panels/TransformInspector";
@@ -10,7 +10,7 @@ type PropertiesTab = "transform" | "library";
 
 const PROPERTIES_TABS: { id: PropertiesTab; label: string; icon: LucideIcon }[] = [
   { id: "transform", label: "Transform", icon: Move3d },
-  { id: "library", label: "Animations", icon: Film },
+  { id: "library", label: "Animations", icon: Clapperboard },
 ];
 
 export function PropertiesPanel() {

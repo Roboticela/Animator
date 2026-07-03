@@ -11,6 +11,7 @@ import {
   Info,
   Keyboard,
   Layers3,
+  Library,
   LifeBuoy,
   Loader2,
   Menu,
@@ -38,6 +39,7 @@ import { useOpenModel } from "@/hooks/useOpenModel";
 import { openLink } from "@/lib/tauri";
 import { GuideModal } from "@/components/modals/GuideModal";
 import { AboutModal } from "@/components/modals/AboutModal";
+import { AnimationLibraryModal } from "@/components/modals/AnimationLibraryModal";
 import { ExportModal } from "@/components/modals/ExportModal";
 import { SceneInfoModal } from "@/components/modals/SceneInfoModal";
 import { ShortcutsModal } from "@/components/modals/ShortcutsModal";
@@ -56,6 +58,7 @@ export function AppHeader() {
   const { theme, setTheme } = useTheme();
   const { openFile, loadSampleRig, isLoading, error, inputRef, handleInputChange } = useOpenModel();
 
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -180,6 +183,18 @@ export function AppHeader() {
             variant="outline"
             size="sm"
             className="gap-2 whitespace-nowrap"
+            onClick={() => setLibraryOpen(true)}
+            disabled={isLoading}
+            title="Browse animation library"
+          >
+            <Library className="h-4 w-4" />
+            <span className="hidden sm:inline">Library</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
             onClick={() => setSceneInfoOpen(true)}
             disabled={!model || isLoading}
             title="Scene statistics and model details"
@@ -290,6 +305,7 @@ export function AppHeader() {
         </div>
       </motion.header>
 
+      <AnimationLibraryModal isOpen={libraryOpen} onClose={() => setLibraryOpen(false)} />
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
       <ExportModal isOpen={exportOpen} onClose={() => setExportOpen(false)} />

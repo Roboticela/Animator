@@ -58,7 +58,33 @@ export function applyPremadeAnimation(id: ProceduralAnimationId) {
   return true;
 }
 
-/** Creates a brand-new, empty custom clip and activates it for editing. */
+/** Adds a procedural library animation as an editable custom clip. */
+export function addLibraryAnimationAsCustom(id: ProceduralAnimationId): boolean {
+  const modelStore = useModelStore.getState();
+  const model = modelStore.model;
+  if (!model) return false;
+
+  modelStore.resetToRestPose();
+  const bones = allBones();
+  const clip = buildProceduralClip(id, bones, model.object3D);
+  if (!clip) return false;
+
+  const def = getProceduralDef(id);
+  if (def?.loop === false) {
+    useAnimationStore.getState().setLoop(false);
+  }
+
+  const meta: ClipMeta = {
+    id: "library-temp",
+    name: def?.name ?? id,
+    source: "embedded",
+    duration: clip.duration,
+    clip,
+  };
+  duplicateClipAsCustom(meta);
+  return true;
+}
+
 export function createNewCustomClip(name = "New Clip") {
   const data = createEmptyCustomClip(name);
   const clip = buildClipFromData(data);

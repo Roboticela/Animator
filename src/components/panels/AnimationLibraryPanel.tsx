@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Box, Copy, Film, Layers, PenTool, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { Box, Clapperboard, Copy, Layers, Pencil, Play, Plus, Scissors, Trash2 } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ type AnimationTab = "embedded" | "custom";
 
 const ANIMATION_TABS: { id: AnimationTab; label: string; icon: LucideIcon }[] = [
   { id: "embedded", label: "Embedded", icon: Layers },
-  { id: "custom", label: "Custom", icon: PenTool },
+  { id: "custom", label: "Clips", icon: Scissors },
 ];
 
 function AnimationTabBar({
@@ -262,7 +262,7 @@ export function AnimationLibraryPanel({ embedded: embeddedInPanel }: { embedded?
               <EmptyState
                 icon={Box}
                 title="No embedded animations"
-                description="This file didn't include baked-in clips. Switch to Custom to author your own animations."
+                description="This file didn't include baked-in clips. Switch to Clips to author your own, or open Library in the header."
               />
             ) : (
               embedded.map((clip) => (
@@ -284,9 +284,9 @@ export function AnimationLibraryPanel({ embedded: embeddedInPanel }: { embedded?
             <NewClipForm onCreate={(name) => createNewCustomClip(name)} />
             {custom.length === 0 ? (
               <EmptyState
-                icon={PenTool}
-                title="No custom animations yet"
-                description='Name a clip above, then pose bones with the gizmo and click "Set Keyframe" in Transform.'
+                icon={Scissors}
+                title="No clips yet"
+                description='Create a clip above, open Library in the header, or pose bones and click "Set Keyframe" in Transform.'
               />
             ) : (
               custom.map((clip) => (
@@ -310,7 +310,7 @@ export function AnimationLibraryPanel({ embedded: embeddedInPanel }: { embedded?
   if (embeddedInPanel) return <div className="h-full min-h-0 overflow-hidden">{libraryBody}</div>;
 
   return (
-    <Panel title="Animations" icon={<Film className="h-3.5 w-3.5" />} noPadding bodyClassName="overflow-hidden">
+    <Panel title="Animations" icon={<Clapperboard className="h-3.5 w-3.5" />} noPadding bodyClassName="overflow-hidden">
       {libraryBody}
     </Panel>
   );

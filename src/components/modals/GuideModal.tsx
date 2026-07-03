@@ -20,7 +20,7 @@ const STEPS = [
   {
     icon: Clapperboard,
     title: "3. Pick an animation",
-    body: "Open the Animations tab in Properties. Select an embedded clip from your file, or switch to Custom to create a new one.",
+    body: "Open the Animations tab in Properties for embedded clips and your Clips. Use Library in the header to browse premade moves and add them as editable clips.",
   },
   {
     icon: Diamond,

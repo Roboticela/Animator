@@ -11,9 +11,21 @@ interface ModalProps {
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
+  bodyClassName?: string;
+  /** When false, body does not scroll — children manage their own scroll areas. */
+  scrollBody?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, icon, children, className }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  icon,
+  children,
+  className,
+  bodyClassName,
+  scrollBody = true,
+}: ModalProps) {
   useEffect(() => {
     if (!isOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
@@ -66,7 +78,15 @@ export function Modal({ isOpen, onClose, title, icon, children, className }: Mod
                   <X className="h-5 w-5 text-foreground" />
                 </motion.button>
               </div>
-              <div className="custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
+              <div
+                className={cn(
+                  "custom-scrollbar flex min-h-0 flex-1 flex-col p-4 sm:p-6",
+                  scrollBody ? "overflow-y-auto" : "overflow-hidden",
+                  bodyClassName
+                )}
+              >
+                {children}
+              </div>
             </div>
           </motion.div>
         </>
