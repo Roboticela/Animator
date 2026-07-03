@@ -77,18 +77,24 @@ function stripPrefix(name: string): string {
 }
 
 function sideOf(rawName: string): "L" | "R" | null {
-  const n = rawName.toLowerCase();
-  if (/\bleft\b/.test(n) || /(^|[_.\s-])l$/.test(n) || /^l[_.\s-]/.test(n)) return "L";
-  if (/\bright\b/.test(n) || /(^|[_.\s-])r$/.test(n) || /^r[_.\s-]/.test(n)) return "R";
+  const n = stripPrefix(rawName);
+  const lower = n.toLowerCase();
+  if (/\bleft\b/.test(lower) || /(^|[_.\s-])l$/.test(lower) || /^l[_.\s-]/.test(lower)) return "L";
+  if (/\bright\b/.test(lower) || /(^|[_.\s-])r$/.test(lower) || /^r[_.\s-]/.test(lower)) return "R";
+  // Mixamo / sample-rig CamelCase: LeftArm, RightUpLeg, …
+  if (/^left[a-z]/i.test(n)) return "L";
+  if (/^right[a-z]/i.test(n)) return "R";
   return null;
 }
 
 /** Removes side tokens so "LeftUpperArm" / "UpperArm.L" / "upperarm_l" all reduce to "upperarm". */
 function coreName(rawName: string): string {
-  return rawName
+  let n = stripPrefix(rawName);
+  n = n.replace(/^left(?=[A-Z])/i, "").replace(/^right(?=[A-Z])/i, "");
+  return n
     .replace(/\bleft\b/gi, "")
     .replace(/\bright\b/gi, "")
-    .replace(/[_.\s-]?[lr]$/i, "")
+    .replace(/[_.\s-][lr]$/i, "")
     .replace(/^[lr][_.\s-]/i, "")
     .replace(/[^a-z0-9]/gi, "")
     .toLowerCase();
@@ -140,7 +146,7 @@ export function matchBoneRoles(bones: BoneInfo[]): Partial<Record<BoneRole, THRE
   for (const { role, test } of SIDED_PATTERNS) {
     for (const side of ["L", "R"] as const) {
       const match = bones.find(
-        (b) => !used.has(b.uuid) && sideOf(stripPrefix(b.name)) === side && test.test(coreName(b.name))
+        (b) => !used.has(b.uuid) && sideOf(b.name) === side && test.test(coreName(b.name))
       );
       if (match) {
         result[`${role}${side}` as BoneRole] = match.bone;

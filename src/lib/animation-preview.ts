@@ -1,9 +1,14 @@
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { SkeletonUtils } from "three-stdlib";
-import { collectSkeletonGroups } from "@/lib/bone-utils";
+import { matchBoneRoles, collectSkeletonGroups } from "@/lib/bone-utils";
 import { buildProceduralClip, getProceduralDef, type ProceduralAnimationId } from "@/lib/procedural";
+import { isBoneDrivenBase } from "@/lib/procedural/animation-requirements";
 import { buildSampleRig } from "@/lib/sample-rig";
+import { frameBoxOnCamera } from "@/lib/viewport-camera";
 import type { BoneInfo } from "@/types/model";
+
+const PREVIEW_ROOT_NAME = "__PreviewAnimRoot__";
 
 let defaultPreviewSource: THREE.Object3D | null = null;
 let defaultPreviewBones: BoneInfo[] | null = null;
@@ -47,16 +52,37 @@ export function cloneModelForPreview(source: THREE.Object3D): THREE.Object3D {
   return clone;
 }
 
+/** Stable root + mesh names so root/opacity animation tracks bind on any model. */
+export function preparePreviewRoot(root: THREE.Object3D): void {
+  root.name = PREVIEW_ROOT_NAME;
+  let meshIndex = 0;
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    if (!mesh.name) {
+      mesh.name = `__PreviewMesh_${meshIndex}`;
+      meshIndex += 1;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!material) continue;
+      material.transparent = true;
+      material.needsUpdate = true;
+    }
+  });
+}
+
 export function collectBonesFromRoot(root: THREE.Object3D): BoneInfo[] {
   return collectSkeletonGroups(root).flatMap((group) => group.bones);
 }
 
-export function canPreviewLibraryAnimation(id: ProceduralAnimationId, bones: BoneInfo[], hasModel: boolean): boolean {
-  if (!hasModel) return false;
+export function canPreviewLibraryAnimation(id: ProceduralAnimationId, bones: BoneInfo[]): boolean {
   const def = getProceduralDef(id);
   if (!def) return false;
-  const boneDriven = def.category === "locomotion" || def.category === "gesture" || def.category === "action";
-  if (boneDriven && bones.length === 0) return false;
+  if (isBoneDrivenBase(def.baseId)) {
+    if (bones.length === 0) return false;
+    return Object.keys(matchBoneRoles(bones)).length > 0;
+  }
   return true;
 }
 
@@ -68,24 +94,17 @@ export function buildLibraryPreviewClip(
   return buildProceduralClip(id, bones, root);
 }
 
-export function frameObjectForCamera(object: THREE.Object3D, camera: THREE.Camera) {
+export function frameObjectForCamera(
+  object: THREE.Object3D,
+  camera: THREE.Camera,
+  controls: OrbitControlsImpl | null = null,
+  padding = 1.75
+) {
   const box = new THREE.Box3().setFromObject(object);
   if (box.isEmpty()) return;
 
-  const center = box.getCenter(new THREE.Vector3());
-  const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z, 0.35);
-  const distance = maxDim * 2.1;
-
-  camera.position.set(center.x + distance * 0.55, center.y + distance * 0.42, center.z + distance * 0.85);
-  if ("lookAt" in camera && typeof camera.lookAt === "function") {
-    camera.lookAt(center);
-  }
-  if ("updateProjectionMatrix" in camera && typeof camera.updateProjectionMatrix === "function") {
-    camera.updateProjectionMatrix();
-  }
-
-  return center;
+  frameBoxOnCamera(box, camera, controls, padding);
+  return box.getCenter(new THREE.Vector3());
 }
 
 /** Releases GPU resources for a cloned preview rig (safe after unmounting from the scene). */

@@ -14,6 +14,12 @@ export function ensureRootName(root: THREE.Object3D) {
   return root.name;
 }
 
+/** Use a stable animation target name on cloned preview roots. */
+export function ensureAnimationRootName(root: THREE.Object3D, name = "__PreviewAnimRoot__") {
+  root.name = name;
+  return name;
+}
+
 export function modelExtents(root: THREE.Object3D) {
   const box = new THREE.Box3().setFromObject(root);
   if (box.isEmpty()) return { width: 1, height: 1, depth: 1 };
@@ -22,9 +28,14 @@ export function modelExtents(root: THREE.Object3D) {
 }
 
 export function prepareMeshOpacity(root: THREE.Object3D) {
+  let meshIndex = 0;
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
+    if (!mesh.name) {
+      mesh.name = `__AnimMesh_${meshIndex}`;
+      meshIndex += 1;
+    }
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     materials.forEach((m) => {
       if (!m) return;
@@ -147,7 +158,10 @@ export function meshOpacityTracks(
 
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
-    if (!mesh.isMesh || !mesh.name) return;
+    if (!mesh.isMesh) return;
+    if (!mesh.name) {
+      mesh.name = `__AnimMesh_${tracks.length}`;
+    }
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
     materials.forEach((material, index) => {
