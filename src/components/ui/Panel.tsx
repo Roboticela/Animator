@@ -23,7 +23,7 @@ export function Panel({ title, icon, actions, children, className, bodyClassName
           {actions && <div className="flex items-center gap-1">{actions}</div>}
         </div>
       )}
-      <div className={cn("custom-scrollbar min-h-0 flex-1 overflow-y-auto", !noPadding && "p-3 sm:p-4", bodyClassName)}>
+      <div className={cn("custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden", !noPadding && "p-3 sm:p-4", bodyClassName)}>
         {children}
       </div>
     </div>

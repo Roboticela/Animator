@@ -120,14 +120,17 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
   },
 
   renameClip: (id, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
     set((s) => ({
       clips: s.clips.map((c) => {
         if (c.id !== id) return c;
         if (c.source === "custom" && c.editable) {
-          const editable = { ...c.editable, name };
-          return { ...c, name, editable, clip: buildClipFromData(editable) };
+          const editable = { ...c.editable, name: trimmed };
+          return { ...c, name: trimmed, editable, clip: buildClipFromData(editable) };
         }
-        return { ...c, name };
+        c.clip.name = trimmed;
+        return { ...c, name: trimmed, clip: c.clip };
       }),
     }));
   },

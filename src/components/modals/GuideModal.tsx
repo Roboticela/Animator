@@ -19,8 +19,8 @@ const STEPS = [
   },
   {
     icon: Clapperboard,
-    title: "3. Try a premade animation",
-    body: "Open the Premade tab in the Animation Library and click any move (Idle, Walk, Run, Wave, Jump, Spin, Dance) to preview it instantly on your rig.",
+    title: "3. Pick an animation",
+    body: "Open the Animations tab in Properties. Select an embedded clip from your file, or switch to Custom to create a new one.",
   },
   {
     icon: Diamond,
@@ -59,7 +59,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
           <span className="font-semibold text-foreground">Shortcuts:</span> W/E/R move/rotate/scale • Space play/pause • K keyframe • F frame model • G grid • L lights • H shadows • Home reset bone • Ctrl+A select all • Ctrl+D deselect • Escape clear • Ctrl+Z/Y undo/redo
         </div>
         <div className="rounded-xl border border-border/60 bg-background/40 p-3 text-xs leading-relaxed text-foreground/55">
-          <span className="font-semibold text-foreground">Note:</span> Premade animations use bone-name heuristics — unusual rig names may only animate partially. Exports are always saved as .glb.
+          <span className="font-semibold text-foreground">Note:</span> Exports are always saved as .glb.
         </div>
       </div>
     </Modal>

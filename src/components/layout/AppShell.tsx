@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Viewport3D } from "@/components/viewport/Viewport3D";
 import { ModelHierarchyPanel } from "@/components/panels/ModelHierarchyPanel";
-import { TransformInspector } from "@/components/panels/TransformInspector";
-import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
+import { PropertiesPanel } from "@/components/panels/PropertiesPanel";
 import { TimelinePanel } from "@/components/timeline/TimelinePanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { ResizeHandle } from "@/components/layout/ResizeHandle";
@@ -41,12 +40,17 @@ export function AppShell() {
   const redo = useAnimationStore((s) => s.redo);
 
   const [layout, setLayout] = useState<LayoutPreferences>(() => loadLayoutPreferences());
-  const rightAsideRef = useRef<HTMLElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
-  const patchLayout = useCallback((patch: Partial<LayoutPreferences>) => {
-    setLayout((prev) => clampLayout({ ...prev, ...patch }));
-  }, []);
+  const patchLayout = useCallback(
+    (patch: Partial<LayoutPreferences> | ((prev: LayoutPreferences) => Partial<LayoutPreferences>)) => {
+      setLayout((prev) => {
+        const next = typeof patch === "function" ? patch(prev) : patch;
+        return clampLayout({ ...prev, ...next });
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     saveLayoutPreferences(layout);
@@ -206,7 +210,7 @@ export function AppShell() {
 
         <ResizeHandle
           axis="horizontal"
-          onDrag={(delta) => patchLayout({ leftWidth: layout.leftWidth + delta })}
+          onDrag={(delta) => patchLayout((prev) => ({ leftWidth: prev.leftWidth + delta }))}
         />
 
         <main className="min-h-0 min-w-[240px] flex-1 overflow-hidden">
@@ -215,38 +219,23 @@ export function AppShell() {
 
         <ResizeHandle
           axis="horizontal"
-          onDrag={(delta) => patchLayout({ rightWidth: layout.rightWidth + delta })}
+          onDrag={(delta) => patchLayout((prev) => ({ rightWidth: prev.rightWidth - delta }))}
         />
 
         <aside
-          ref={rightAsideRef}
-          className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
+          className="flex h-full min-h-0 flex-shrink-0 flex-col overflow-hidden"
           style={{ width: layout.rightWidth }}
         >
-          <div className="min-h-0 overflow-hidden" style={{ flex: `${layout.rightSplit} 1 0` }}>
-            <AnimationLibraryPanel />
-          </div>
-          <ResizeHandle
-            axis="vertical"
-            onDrag={(delta) => {
-              const total = rightAsideRef.current?.clientHeight ?? 0;
-              if (total <= 0) return;
-              const topPx = layout.rightSplit * total + delta;
-              patchLayout({ rightSplit: topPx / total });
-            }}
-          />
-          <div className="min-h-0 overflow-hidden" style={{ flex: `${1 - layout.rightSplit} 1 0` }}>
-            <TransformInspector />
-          </div>
+          <PropertiesPanel />
         </aside>
       </div>
 
       <ResizeHandle
         axis="vertical"
         onDrag={(delta) =>
-          patchLayout({
-            timelineHeight: Math.min(timelineMaxHeight(), layout.timelineHeight + delta),
-          })
+          patchLayout((prev) => ({
+            timelineHeight: Math.min(timelineMaxHeight(), prev.timelineHeight - delta),
+          }))
         }
       />
 

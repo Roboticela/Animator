@@ -185,21 +185,6 @@ export function TimelinePanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [deleteSelected, isEditable, selectAllKeyframes, selection.count]);
 
-  if (!activeClip) {
-    return (
-      <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-xl border border-border bg-card">
-        <Layers className="mb-2 h-8 w-8 text-foreground-muted/40" />
-        <p className="max-w-xs px-4 text-center text-xs leading-relaxed text-foreground-muted">
-          Select a clip from the Animation Library to edit keyframes, play ranges, and effects here.
-        </p>
-      </div>
-    );
-  }
-
-  const primary = selection.primary;
-  const selectedEasing =
-    primary && activeClip.editable ? getPoseEasing(activeClip.editable, primary.bone, primary.time) : "linear";
-
   const collectKeyframesInMarquee = useCallback(
     (box: { x0: number; y0: number; x1: number; y1: number }): TimelineKeyframeRef[] => {
       if (!activeClip?.editable) return [];
@@ -224,6 +209,21 @@ export function TimelinePanel() {
     },
     [activeClip?.editable, animatedBones, timelineZoom]
   );
+
+  if (!activeClip) {
+    return (
+      <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-xl border border-border bg-card">
+        <Layers className="mb-2 h-8 w-8 text-foreground-muted/40" />
+        <p className="max-w-xs px-4 text-center text-xs leading-relaxed text-foreground-muted">
+          Select a clip from Animations to edit keyframes, play ranges, and effects here.
+        </p>
+      </div>
+    );
+  }
+
+  const primary = selection.primary;
+  const selectedEasing =
+    primary && activeClip.editable ? getPoseEasing(activeClip.editable, primary.bone, primary.time) : "linear";
 
   const onMarqueePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isEditable || e.button !== 0) return;

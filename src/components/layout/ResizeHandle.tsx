@@ -12,9 +12,17 @@ export function ResizeHandle({ axis, onDrag, className }: ResizeHandleProps) {
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
     let last = axis === "horizontal" ? e.clientX : e.clientY;
+
+    const finish = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+    };
 
     const move = (ev: PointerEvent) => {
       const current = axis === "horizontal" ? ev.clientX : ev.clientY;
@@ -23,14 +31,9 @@ export function ResizeHandle({ axis, onDrag, className }: ResizeHandleProps) {
       last = current;
     };
 
-    const up = () => {
-      el.releasePointerCapture(e.pointerId);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    };
-
     window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
   };
 
   const isCol = axis === "horizontal";
@@ -41,10 +44,10 @@ export function ResizeHandle({ axis, onDrag, className }: ResizeHandleProps) {
       aria-orientation={isCol ? "vertical" : "horizontal"}
       title={isCol ? "Drag to resize panels" : "Drag to resize timeline"}
       className={cn(
-        "group z-20 flex-shrink-0 touch-none select-none bg-transparent transition-colors",
+        "group relative z-30 flex-shrink-0 touch-none select-none bg-transparent transition-colors",
         isCol
-          ? "flex w-2 cursor-col-resize items-center justify-center hover:bg-primary/10 active:bg-primary/15"
-          : "flex h-2 cursor-row-resize items-center justify-center hover:bg-primary/10 active:bg-primary/15",
+          ? "flex w-2.5 cursor-col-resize items-center justify-center hover:bg-primary/10 active:bg-primary/15"
+          : "flex h-2.5 cursor-row-resize items-center justify-center hover:bg-primary/10 active:bg-primary/15",
         className
       )}
       onPointerDown={onPointerDown}

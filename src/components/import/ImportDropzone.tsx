@@ -6,7 +6,7 @@ import { useOpenModel } from "@/hooks/useOpenModel";
 
 const FEATURES = [
   { icon: Spline, text: "Inspect every armature & bone" },
-  { icon: Clapperboard, text: "Instant premade animations" },
+  { icon: Clapperboard, text: "Play embedded animations" },
   { icon: FileDown, text: "Hand-author custom clips & export to GLB" },
 ];
 
