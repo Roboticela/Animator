@@ -33,7 +33,7 @@ const CARD_BODY_HEIGHT_PX = 136;
 const CARD_ROW_HEIGHT_PX = PREVIEW_HEIGHT_PX + CARD_BODY_HEIGHT_PX + 16;
 const TOTAL_ROLE_COUNT = 18;
 const LIBRARY_BATCH_SIZE = 6;
-const LIBRARY_PREVIEW_SLOTS = 6;
+const LIBRARY_PREVIEW_SLOTS = 3;
 
 function useCardInView() {
   const ref = useRef<HTMLDivElement>(null);
@@ -86,10 +86,11 @@ function LibraryAnimationCard({
   const wantsPreview = !disabled && visible;
   const slotStatus = usePreviewSlotStatus(id, wantsPreview && cacheStatus === "ready");
   const [canvasReady, setCanvasReady] = useState(false);
+  const [previewGeneration, setPreviewGeneration] = useState(0);
 
   useEffect(() => {
     setCanvasReady(false);
-  }, [id, slotStatus, cacheStatus]);
+  }, [id, slotStatus, cacheStatus, previewGeneration]);
 
   const showCanvas = wantsPreview && cacheStatus === "ready" && slotStatus === "active";
   const showLoader =
@@ -128,6 +129,10 @@ function LibraryAnimationCard({
             cacheReady={cacheStatus === "ready"}
             className="h-full w-full"
             onReady={() => setCanvasReady(true)}
+            onPlaybackLost={() => {
+              setCanvasReady(false);
+              setPreviewGeneration((g) => g + 1);
+            }}
           />
         ) : (
           !showLoader && (

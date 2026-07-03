@@ -15,6 +15,19 @@ export function nextClipId() {
   return `clip-${clipUid}`;
 }
 
+/** Picks `name`, or `name 2`, `name 3`, … when clips already use that title. */
+export function uniqueClipName(name: string, existingNames: Iterable<string>): string {
+  const base = name.trim() || "Clip";
+  const taken = new Set(Array.from(existingNames, (n) => n.trim().toLowerCase()));
+  if (!taken.has(base.toLowerCase())) return base;
+
+  let suffix = 2;
+  while (taken.has(`${base} ${suffix}`.toLowerCase())) {
+    suffix += 1;
+  }
+  return `${base} ${suffix}`;
+}
+
 export function createEmptyCustomClip(name: string, duration = 2, fps = 30): CustomClipData {
   return { id: nextClipId(), name, duration, fps, loop: true, tracks: [], poseEasings: [] };
 }

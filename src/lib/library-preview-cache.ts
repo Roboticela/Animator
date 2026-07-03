@@ -47,11 +47,19 @@ export function isLibraryPreviewCacheReady(): boolean {
   return Boolean(cachedSource && cacheKey === cacheKeyFor(source));
 }
 
-/** Independent clone for a single card preview (animation state is per-clone). */
-export function cloneFromLibraryPreviewCache(): THREE.Object3D {
-  if (!cachedSource) {
-    throw new Error("Library preview cache is not ready");
+/** Waits for an in-flight warm or starts one if needed. */
+export async function waitForLibraryPreviewCache(): Promise<THREE.Object3D | null> {
+  if (isLibraryPreviewCacheReady()) return cachedSource;
+  try {
+    return await warmLibraryPreviewCache();
+  } catch {
+    return null;
   }
+}
+
+/** Independent clone for a single card preview (animation state is per-clone). */
+export function cloneFromLibraryPreviewCache(): THREE.Object3D | null {
+  if (!cachedSource) return null;
   const clone = cloneModelForPreview(cachedSource);
   preparePreviewRoot(clone);
   return clone;

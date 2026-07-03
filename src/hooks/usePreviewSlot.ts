@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
-let maxActivePreviews = 6;
+let maxActivePreviews = 3;
 const active = new Set<string>();
 const waiting = new Set<string>();
 const listeners = new Set<() => void>();

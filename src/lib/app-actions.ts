@@ -2,7 +2,7 @@ import type { ClipMeta, ModelData } from "@/types/model";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { buildProceduralClip, getProceduralDef, type ProceduralAnimationId } from "@/lib/procedural";
-import { buildClipFromData, captureBoneTransform, clipToCustomData, createEmptyCustomClip, deleteBoneKeyframe, ensureBonePoseEasing, nextClipId, setPoseEasing, setPoseEasingForBones, upsertKeyframe } from "@/lib/clip-builder";
+import { buildClipFromData, captureBoneTransform, clipToCustomData, createEmptyCustomClip, deleteBoneKeyframe, ensureBonePoseEasing, nextClipId, setPoseEasing, setPoseEasingForBones, uniqueClipName, upsertKeyframe } from "@/lib/clip-builder";
 import type { KeyframeEasingId } from "@/lib/keyframe-easing";
 import { copyBoneTransforms, mirrorBonesOnX, pasteBoneTransforms } from "@/lib/bone-clipboard";
 
@@ -74,14 +74,19 @@ export function addLibraryAnimationAsCustom(id: ProceduralAnimationId): boolean 
     useAnimationStore.getState().setLoop(false);
   }
 
+  const baseName = def?.name ?? id;
+  const name = uniqueClipName(baseName, useAnimationStore.getState().clips.map((c) => c.name));
+  const data = clipToCustomData(clip, name);
+  const built = buildClipFromData(data);
   const meta: ClipMeta = {
-    id: "library-temp",
-    name: def?.name ?? id,
-    source: "embedded",
-    duration: clip.duration,
-    clip,
+    id: data.id,
+    name,
+    source: "custom",
+    duration: data.duration,
+    clip: built,
+    editable: data,
   };
-  duplicateClipAsCustom(meta);
+  useAnimationStore.getState().addClip(meta, true);
   return true;
 }
 

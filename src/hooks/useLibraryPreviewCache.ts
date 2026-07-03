@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { clearLibraryPreviewCache, warmLibraryPreviewCache } from "@/lib/library-preview-cache";
-import { resetDefaultPreviewSource } from "@/lib/animation-preview";
+import { warmLibraryPreviewCache } from "@/lib/library-preview-cache";
 import { resetPreviewSlots } from "@/hooks/usePreviewSlot";
 
 export type LibraryCacheStatus = "idle" | "warming" | "ready" | "error";
@@ -15,7 +14,6 @@ export function useLibraryPreviewCache(isOpen: boolean): LibraryCacheStatus {
       return;
     }
 
-    resetDefaultPreviewSource();
     let cancelled = false;
     setStatus("warming");
 
@@ -29,7 +27,6 @@ export function useLibraryPreviewCache(isOpen: boolean): LibraryCacheStatus {
 
     return () => {
       cancelled = true;
-      clearLibraryPreviewCache();
       resetPreviewSlots();
       setStatus("idle");
     };
