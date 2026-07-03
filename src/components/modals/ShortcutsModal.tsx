@@ -52,7 +52,7 @@ const GROUPS = [
 
 export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Keyboard Shortcuts" icon={<Keyboard className="h-5 w-5 text-primary" />} className="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Shortcuts" icon={<Keyboard className="h-5 w-5 text-primary" />} className="max-w-lg">
       <div className="custom-scrollbar max-h-[min(70vh,28rem)] space-y-4 overflow-y-auto pr-1">
         {GROUPS.map((group) => (
           <div key={group.title}>

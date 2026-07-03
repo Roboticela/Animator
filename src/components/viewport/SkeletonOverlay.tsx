@@ -6,12 +6,16 @@ import type { BoneInfo } from "@/types/model";
 
 const dummy = new THREE.Object3D();
 const JOINT_COLOR = new THREE.Color("#38bdf8");
+const HOVER_RING_COLOR = new THREE.Color("#7dd3fc");
 
 export function SkeletonOverlay() {
   const model = useModelStore((s) => s.model);
   const showSkeleton = useModelStore((s) => s.showSkeleton);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
+  const hoveredBoneName = useModelStore((s) => s.hoveredBoneName);
   const pickBone = useModelStore((s) => s.pickBone);
+  const setHoveredBone = useModelStore((s) => s.setHoveredBone);
+  const clearViewportHover = useModelStore((s) => s.clearViewportHover);
   const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
   const isolateSelection = useModelStore((s) => s.isolateSelection);
@@ -39,6 +43,7 @@ export function SkeletonOverlay() {
   const jointsRef = useRef<THREE.InstancedMesh>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
   const highlightsRef = useRef<THREE.InstancedMesh>(null);
+  const hoverHighlightsRef = useRef<THREE.InstancedMesh>(null);
 
   const lineGeometry = useMemo(() => {
     const geom = new THREE.BufferGeometry();
@@ -57,7 +62,9 @@ export function SkeletonOverlay() {
       displayBones.forEach((info, i) => {
         info.bone.getWorldPosition(worldPos);
         dummy.position.copy(worldPos);
-        dummy.scale.setScalar(selectedSet.has(info.name) ? 1.7 : 1);
+        const selected = selectedSet.has(info.name);
+        const hovered = hoveredBoneName === info.name;
+        dummy.scale.setScalar(selected ? 1.7 : hovered ? 1.4 : 1);
         dummy.updateMatrix();
         jointsRef.current!.setMatrixAt(i, dummy.matrix);
       });
@@ -89,6 +96,22 @@ export function SkeletonOverlay() {
       });
       highlightsRef.current.instanceMatrix.needsUpdate = true;
     }
+
+    if (hoverHighlightsRef.current) {
+      const hoveredBones = displayBones.filter(
+        (b) => hoveredBoneName === b.name && !selectedSet.has(b.name)
+      );
+      hoverHighlightsRef.current.count = hoveredBones.length;
+      hoverHighlightsRef.current.visible = hoveredBones.length > 0;
+      hoveredBones.forEach((info, i) => {
+        info.bone.getWorldPosition(worldPos);
+        dummy.position.copy(worldPos);
+        dummy.scale.setScalar(1);
+        dummy.updateMatrix();
+        hoverHighlightsRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      hoverHighlightsRef.current.instanceMatrix.needsUpdate = true;
+    }
   });
 
   if (!model || !showSkeleton || displayBones.length === 0) return null;
@@ -103,6 +126,19 @@ export function SkeletonOverlay() {
     pickBoneFromClick(pickBone, info.name, selectedBoneNames, e.nativeEvent);
   };
 
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    if (viewportSelectionTarget !== "bones") return;
+    e.stopPropagation();
+    if (e.instanceId === undefined) return;
+    const info = displayBones[e.instanceId];
+    if (info) setHoveredBone(info.name);
+  };
+
+  const handlePointerOut = () => {
+    if (viewportSelectionTarget !== "bones") return;
+    clearViewportHover();
+  };
+
   const pickBones = viewportSelectionTarget === "bones";
 
   return (
@@ -114,10 +150,16 @@ export function SkeletonOverlay() {
         ref={jointsRef}
         args={[undefined, undefined, Math.max(displayBones.length, 1)]}
         onClick={pickBones ? handleClick : undefined}
+        onPointerMove={pickBones ? handlePointerMove : undefined}
+        onPointerOut={pickBones ? handlePointerOut : undefined}
         raycast={pickBones ? undefined : () => null}
       >
         <sphereGeometry args={[jointRadius, 10, 10]} />
         <meshBasicMaterial color={JOINT_COLOR} depthTest={false} transparent opacity={0.95} />
+      </instancedMesh>
+      <instancedMesh ref={hoverHighlightsRef} args={[undefined, undefined, Math.max(displayBones.length, 1)]} frustumCulled={false}>
+        <sphereGeometry args={[jointRadius * 1.35, 12, 12]} />
+        <meshBasicMaterial color={HOVER_RING_COLOR} depthTest={false} transparent opacity={0.55} />
       </instancedMesh>
       <instancedMesh ref={highlightsRef} args={[undefined, undefined, Math.max(displayBones.length, 1)]} frustumCulled={false}>
         <sphereGeometry args={[jointRadius * 1.5, 12, 12]} />

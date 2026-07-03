@@ -34,7 +34,7 @@ function addSegmentMesh(
  */
 export function buildSampleRig(): ModelData {
   const root = new THREE.Group();
-  root.name = "Sample Rig";
+  root.name = "Demo Model";
 
   const armature = new THREE.Group();
   armature.name = "Armature";
@@ -112,7 +112,7 @@ export function buildSampleRig(): ModelData {
     skeletonGroups: collectSkeletonGroups(root),
     embeddedClips: [],
     stats: computeSceneStats(root),
-    sourceName: "Sample Rig",
+    sourceName: "Demo Model",
     sourceExt: "glb",
   };
 }

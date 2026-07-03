@@ -247,12 +247,9 @@ export function AnimationLibraryModal({ isOpen, onClose }: AnimationLibraryModal
           </div>
         )}
 
-        {cacheStatus !== "warming" && (
+        {cacheStatus !== "warming" && !model && (
           <p className="shrink-0 rounded-lg border border-border/60 bg-background-subtle px-3 py-2 text-[11px] leading-relaxed text-foreground-muted">
-            Previews use the <span className="font-medium text-foreground">sample rig</span> for speed.
-            {model
-              ? " Add applies animations to your loaded model."
-              : " Open a model to add clips to your character."}
+            Open a model to add clips to your character.
           </p>
         )}
 

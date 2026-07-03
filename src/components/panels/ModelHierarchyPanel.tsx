@@ -22,30 +22,47 @@ function Row({
   icon: Icon,
   label,
   selected,
+  hovered,
   dimmed,
   keyed,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   depth: number;
   icon: LucideIcon;
   label: string;
   selected?: boolean;
+  hovered?: boolean;
   dimmed?: boolean;
   keyed?: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       style={{ paddingLeft: 8 + depth * 12 }}
       className={cn(
         "flex w-full items-center gap-1.5 rounded-md py-1 pr-2 text-left text-xs transition-colors",
-        selected ? "bg-primary/15 text-primary" : "text-foreground-muted hover:bg-accent hover:text-foreground",
-        dimmed && !selected && "opacity-40"
+        selected
+          ? "bg-primary/15 text-primary"
+          : hovered
+            ? "bg-primary/10 text-foreground ring-1 ring-inset ring-primary/30"
+            : "text-foreground-muted hover:bg-accent hover:text-foreground",
+        dimmed && !selected && !hovered && "opacity-40"
       )}
     >
-      <Icon className={cn("h-3.5 w-3.5 flex-shrink-0", selected ? "text-primary" : "text-foreground/40")} />
+      <Icon
+        className={cn(
+          "h-3.5 w-3.5 flex-shrink-0",
+          selected ? "text-primary" : hovered ? "text-primary/80" : "text-foreground/40"
+        )}
+      />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {keyed && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" title="Has keyframes" />}
     </button>
@@ -79,8 +96,11 @@ function PartTree({
   collapsed,
   toggleGroup,
   selectedMeshSet,
+  hoveredMeshPartId,
   pickMeshPart,
   selectedMeshUuids,
+  setHoveredMeshPart,
+  clearViewportHover,
 }: {
   parts: MeshPartInfo[];
   parentId: string | null;
@@ -88,8 +108,11 @@ function PartTree({
   collapsed: Set<string>;
   toggleGroup: (id: string) => void;
   selectedMeshSet: Set<string>;
+  hoveredMeshPartId: string | null;
   pickMeshPart: ReturnType<typeof useModelStore.getState>["pickMeshPart"];
   selectedMeshUuids: string[];
+  setHoveredMeshPart: (id: string | null) => void;
+  clearViewportHover: () => void;
 }) {
   const children = parts.filter((p) => p.parentId === parentId);
   if (children.length === 0) return null;
@@ -125,8 +148,11 @@ function PartTree({
                   collapsed={collapsed}
                   toggleGroup={toggleGroup}
                   selectedMeshSet={selectedMeshSet}
+                  hoveredMeshPartId={hoveredMeshPartId}
                   pickMeshPart={pickMeshPart}
                   selectedMeshUuids={selectedMeshUuids}
+                  setHoveredMeshPart={setHoveredMeshPart}
+                  clearViewportHover={clearViewportHover}
                 />
               )}
             </div>
@@ -141,7 +167,12 @@ function PartTree({
             icon={hidden ? EyeOff : Box}
             label={part.name}
             selected={selectedMeshSet.has(part.id)}
+            hovered={hoveredMeshPartId === part.id}
             dimmed={hidden}
+            onMouseEnter={() => setHoveredMeshPart(part.id)}
+            onMouseLeave={() => {
+              if (useModelStore.getState().hoveredMeshPartId === part.id) clearViewportHover();
+            }}
             onClick={(e) => pickMeshPartFromClick(pickMeshPart, part.id, selectedMeshUuids, e)}
           />
         );
@@ -157,6 +188,11 @@ export function ModelHierarchyPanel() {
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
   const pickBone = useModelStore((s) => s.pickBone);
   const pickMeshPart = useModelStore((s) => s.pickMeshPart);
+  const hoveredBoneName = useModelStore((s) => s.hoveredBoneName);
+  const hoveredMeshPartId = useModelStore((s) => s.hoveredMeshPartId);
+  const setHoveredBone = useModelStore((s) => s.setHoveredBone);
+  const setHoveredMeshPart = useModelStore((s) => s.setHoveredMeshPart);
+  const clearViewportHover = useModelStore((s) => s.clearViewportHover);
   const removeSelectedBones = useModelStore((s) => s.removeSelectedBones);
   const removeSelectedMeshParts = useModelStore((s) => s.removeSelectedMeshParts);
   const toggleSelectedMeshVisibility = useModelStore((s) => s.toggleSelectedMeshVisibility);
@@ -254,7 +290,10 @@ export function ModelHierarchyPanel() {
         </div>
       </div>
 
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-1.5">
+      <div
+        className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-1.5"
+        onMouseLeave={() => clearViewportHover()}
+      >
         {tab === "armatures" && (
           <>
             {groups.length === 0 && (
@@ -285,7 +324,12 @@ export function ModelHierarchyPanel() {
                         icon={getBoneIcon(info.name, info.depth)}
                         label={info.name}
                         selected={selectedBoneSet.has(info.name)}
+                        hovered={hoveredBoneName === info.name}
                         keyed={activeClip?.editable ? boneHasKeyframes(activeClip.editable, info.name) : false}
+                        onMouseEnter={() => setHoveredBone(info.name)}
+                        onMouseLeave={() => {
+                          if (useModelStore.getState().hoveredBoneName === info.name) clearViewportHover();
+                        }}
                         onClick={(e) => pickBoneFromClick(pickBone, info.name, selectedBoneNames, e)}
                       />
                     ))}
@@ -307,8 +351,11 @@ export function ModelHierarchyPanel() {
               collapsed={collapsed}
               toggleGroup={toggleGroup}
               selectedMeshSet={selectedMeshSet}
+              hoveredMeshPartId={hoveredMeshPartId}
               pickMeshPart={pickMeshPart}
               selectedMeshUuids={selectedMeshUuids}
+              setHoveredMeshPart={setHoveredMeshPart}
+              clearViewportHover={clearViewportHover}
             />
           </>
         )}

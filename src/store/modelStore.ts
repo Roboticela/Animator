@@ -49,6 +49,8 @@ interface ModelState {
   selectionAnchorName: string | null;
   selectedMeshUuids: string[];
   meshSelectionAnchorUuid: string | null;
+  hoveredBoneName: string | null;
+  hoveredMeshPartId: string | null;
   viewportSelectionTarget: ViewportSelectionTarget;
   meshElementMode: MeshElementMode;
   meshEditTool: MeshEditTool;
@@ -89,6 +91,9 @@ interface ModelState {
   pickMeshPart: (id: string | null, modifiers?: BonePickModifiers) => void;
   selectAllMeshParts: () => void;
   clearMeshSelection: () => void;
+  setHoveredBone: (name: string | null) => void;
+  setHoveredMeshPart: (id: string | null) => void;
+  clearViewportHover: () => void;
   setViewportSelectionTarget: (target: ViewportSelectionTarget) => void;
   setMeshElementMode: (mode: MeshElementMode) => void;
   setMeshEditTool: (tool: MeshEditTool) => void;
@@ -181,6 +186,8 @@ export const useModelStore = create<ModelState>((set, get) => ({
   selectionAnchorName: null,
   selectedMeshUuids: [],
   meshSelectionAnchorUuid: null,
+  hoveredBoneName: null,
+  hoveredMeshPartId: null,
   viewportSelectionTarget: "bones",
   meshElementMode: "object",
   meshEditTool: "select",
@@ -229,6 +236,8 @@ export const useModelStore = create<ModelState>((set, get) => ({
       selectionAnchorName: null,
       selectedMeshUuids: [],
       meshSelectionAnchorUuid: null,
+      hoveredBoneName: null,
+      hoveredMeshPartId: null,
       viewportSelectionTarget: "bones",
       meshElementMode: "object",
       meshEditTool: "select",
@@ -255,6 +264,8 @@ export const useModelStore = create<ModelState>((set, get) => ({
       selectionAnchorName: null,
       selectedMeshUuids: [],
       meshSelectionAnchorUuid: null,
+      hoveredBoneName: null,
+      hoveredMeshPartId: null,
       viewportSelectionTarget: "bones",
       meshElementMode: "object",
       meshEditTool: "select",
@@ -362,6 +373,10 @@ export const useModelStore = create<ModelState>((set, get) => ({
   },
 
   clearMeshSelection: () => set({ selectedMeshUuids: [], meshSelectionAnchorUuid: null }),
+
+  setHoveredBone: (name) => set({ hoveredBoneName: name, hoveredMeshPartId: null }),
+  setHoveredMeshPart: (id) => set({ hoveredMeshPartId: id, hoveredBoneName: null }),
+  clearViewportHover: () => set({ hoveredBoneName: null, hoveredMeshPartId: null }),
 
   setViewportSelectionTarget: (target) =>
     set({

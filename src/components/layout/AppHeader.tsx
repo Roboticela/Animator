@@ -236,7 +236,7 @@ export function AppHeader() {
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => void loadSampleRig()} disabled={isLoading}>
                     <Cuboid className="h-4 w-4" />
-                    <span>Load Sample Rig</span>
+                    <span>Load Demo Model</span>
                   </DropdownMenuItem>
                 </motion.div>
                 {model && (
@@ -267,7 +267,7 @@ export function AppHeader() {
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => setShortcutsOpen(true)}>
                     <Keyboard className="h-4 w-4" />
-                    <span>Keyboard Shortcuts</span>
+                    <span>Shortcuts</span>
                   </DropdownMenuItem>
                 </motion.div>
               </AnimatePresence>

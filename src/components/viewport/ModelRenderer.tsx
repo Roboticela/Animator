@@ -2,7 +2,8 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useModelStore } from "@/store/modelStore";
 
-const HIGHLIGHT = new THREE.Color("#38bdf8");
+const SELECT_HIGHLIGHT = new THREE.Color("#38bdf8");
+const HOVER_HIGHLIGHT = new THREE.Color("#7dd3fc");
 
 export function ModelRenderer() {
   const model = useModelStore((s) => s.model);
@@ -13,9 +14,14 @@ export function ModelRenderer() {
   const flatShading = useModelStore((s) => s.flatShading);
   const doubleSided = useModelStore((s) => s.doubleSided);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const hoveredMeshPartId = useModelStore((s) => s.hoveredMeshPartId);
   const selectedParts = useMemo(
     () => meshParts.filter((p) => selectedMeshUuids.includes(p.id) && p.mesh),
     [meshParts, selectedMeshUuids]
+  );
+  const hoveredPart = useMemo(
+    () => meshParts.find((p) => p.id === hoveredMeshPartId && p.mesh) ?? null,
+    [meshParts, hoveredMeshPartId]
   );
 
   useEffect(() => {
@@ -31,9 +37,16 @@ export function ModelRenderer() {
       mesh.visible = showMesh && !partHidden;
 
       const selectionsOnMesh = selectedParts.filter((p) => p.mesh === mesh);
+      const hoveredOnMesh = hoveredPart?.mesh === mesh ? [hoveredPart] : [];
       const selectedWhole = selectionsOnMesh.some((p) => p.kind === "mesh");
+      const hoveredWhole = hoveredOnMesh.some((p) => p.kind === "mesh");
       const selectedPrimitiveIndices = new Set(
         selectionsOnMesh
+          .filter((p) => p.kind === "primitive" && p.geometryGroupIndex != null)
+          .map((p) => p.geometryGroupIndex as number)
+      );
+      const hoveredPrimitiveIndices = new Set(
+        hoveredOnMesh
           .filter((p) => p.kind === "primitive" && p.geometryGroupIndex != null)
           .map((p) => p.geometryGroupIndex as number)
       );
@@ -58,10 +71,16 @@ export function ModelRenderer() {
           .filter((index) => index >= 0);
         const primitiveSelected =
           selectedWhole || groupIndices.some((index) => selectedPrimitiveIndices.has(index));
+        const primitiveHovered =
+          !primitiveSelected &&
+          (hoveredWhole || groupIndices.some((index) => hoveredPrimitiveIndices.has(index)));
 
         if (primitiveSelected) {
-          material.emissive.copy(HIGHLIGHT);
+          material.emissive.copy(SELECT_HIGHLIGHT);
           material.emissiveIntensity = 0.22;
+        } else if (primitiveHovered) {
+          material.emissive.copy(HOVER_HIGHLIGHT);
+          material.emissiveIntensity = 0.14;
         } else if (material.userData._baseEmissive instanceof THREE.Color) {
           material.emissive.copy(material.userData._baseEmissive);
           material.emissiveIntensity = material.userData._baseEmissiveIntensity ?? 0;
@@ -70,7 +89,7 @@ export function ModelRenderer() {
         material.needsUpdate = true;
       });
     });
-  }, [model, wireframe, showShadows, showMesh, flatShading, doubleSided, selectedParts]);
+  }, [model, wireframe, showShadows, showMesh, flatShading, doubleSided, selectedParts, hoveredPart]);
 
   if (!model) return null;
 
