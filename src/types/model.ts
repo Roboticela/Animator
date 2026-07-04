@@ -50,6 +50,8 @@ export interface ModelData {
   stats: SceneStats;
   sourceName: string;
   sourceExt: SourceExtension;
+  /** Original file bytes when loaded from disk — used for lossless .rcanim round-trip. */
+  sourceBuffer?: ArrayBuffer;
 }
 
 export type ClipSource = "embedded" | "premade" | "custom";

@@ -18,6 +18,7 @@ import {
   setAllMeshPartsVisible,
   setMeshPartsVisible,
 } from "@/lib/model-edit";
+import { applyMaterialPreference, snapshotMeshMaterials } from "@/lib/model-appearance";
 import type { MeshEditTool, MeshElementMode, MeshElementSelection } from "@/lib/mesh-edit/types";
 import { emptyMeshElementSelection } from "@/lib/mesh-edit/types";
 import {
@@ -67,6 +68,8 @@ interface ModelState {
   showAxes: boolean;
   autoRotate: boolean;
   showMesh: boolean;
+  /** When false, meshes render with flat neutral shading (geometry only). */
+  showMaterials: boolean;
   orthographicCamera: boolean;
   flatShading: boolean;
   doubleSided: boolean;
@@ -125,6 +128,8 @@ interface ModelState {
   toggleAxes: () => void;
   toggleAutoRotate: () => void;
   toggleShowMesh: () => void;
+  setShowMaterials: (show: boolean) => void;
+  toggleShowMaterials: () => void;
   toggleOrthographicCamera: () => void;
   toggleFlatShading: () => void;
   toggleDoubleSided: () => void;
@@ -204,6 +209,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   showAxes: false,
   autoRotate: false,
   showMesh: true,
+  showMaterials: true,
   orthographicCamera: false,
   flatShading: false,
   doubleSided: false,
@@ -220,6 +226,8 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   loadModel: (data) => {
     get().engine?.dispose();
+    snapshotMeshMaterials(data.object3D);
+    applyMaterialPreference(data.object3D, get().showMaterials);
     const meshParts = collectMeshParts(data.object3D);
     const boneMap = buildBoneMap(data.skeletonGroups);
     const restPose = captureRest(boneMap);
@@ -632,6 +640,18 @@ export const useModelStore = create<ModelState>((set, get) => ({
   toggleAxes: () => set((s) => ({ showAxes: !s.showAxes })),
   toggleAutoRotate: () => set((s) => ({ autoRotate: !s.autoRotate })),
   toggleShowMesh: () => set((s) => ({ showMesh: !s.showMesh })),
+
+  setShowMaterials: (show) => {
+    const { model } = get();
+    if (model) applyMaterialPreference(model.object3D, show);
+    set({ showMaterials: show });
+  },
+
+  toggleShowMaterials: () => {
+    const next = !get().showMaterials;
+    get().setShowMaterials(next);
+  },
+
   toggleOrthographicCamera: () => set((s) => ({ orthographicCamera: !s.orthographicCamera })),
   toggleFlatShading: () => set((s) => ({ flatShading: !s.flatShading })),
   toggleDoubleSided: () => set((s) => ({ doubleSided: !s.doubleSided })),

@@ -15,6 +15,7 @@ import {
   LifeBuoy,
   Loader2,
   Menu,
+  Paintbrush,
   Palette,
   Redo2,
   Scale,
@@ -56,7 +57,9 @@ export function AppHeader() {
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
   const { theme, setTheme } = useTheme();
-  const { openFile, loadSampleRig, isLoading, error, inputRef, handleInputChange } = useOpenModel();
+  const showMaterials = useModelStore((s) => s.showMaterials);
+  const toggleShowMaterials = useModelStore((s) => s.toggleShowMaterials);
+  const { openFile, saveProject, loadSampleRig, isLoading, error, inputRef, handleInputChange } = useOpenModel();
 
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -161,11 +164,52 @@ export function AppHeader() {
             <span className="hidden sm:inline">Redo</span>
           </Button>
 
-          <input ref={inputRef} type="file" accept=".glb,.gltf,.fbx,.obj" className="hidden" onChange={handleInputChange} />
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".glb,.gltf,.fbx,.obj,.rcanim"
+            className="hidden"
+            onChange={handleInputChange}
+          />
 
-          <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap" onClick={openFile} disabled={isLoading}>
+          <Button
+            variant={showMaterials ? "default" : "outline"}
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            onClick={() => toggleShowMaterials()}
+            disabled={isLoading}
+            title={
+              showMaterials
+                ? "Load & show materials, colors, and textures"
+                : "Load meshes only with flat shading"
+            }
+          >
+            <Paintbrush className="h-4 w-4" />
+            <span className="hidden lg:inline">{showMaterials ? "Materials" : "Meshes"}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            onClick={() => void openFile()}
+            disabled={isLoading}
+            title="Open model or .rcanim project"
+          >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
             <span className="hidden sm:inline">Open</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
+            onClick={() => void saveProject()}
+            disabled={!model || isLoading}
+            title="Save .rcanim project"
+          >
+            <FileDown className="h-4 w-4" />
+            <span className="hidden lg:inline">Save Project</span>
           </Button>
 
           <Button

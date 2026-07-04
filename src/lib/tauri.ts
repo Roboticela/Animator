@@ -20,6 +20,8 @@ export interface OpenedFile {
 }
 
 const MODEL_EXTENSIONS = ["glb", "gltf", "fbx", "obj"];
+const PROJECT_EXTENSIONS = ["rcanim"];
+const OPEN_EXTENSIONS = [...MODEL_EXTENSIONS, ...PROJECT_EXTENSIONS];
 
 /**
  * Opens a native "Open File" dialog on desktop and reads the chosen file's
@@ -27,7 +29,8 @@ const MODEL_EXTENSIONS = ["glb", "gltf", "fbx", "obj"];
  * running under Tauri (callers should fall back to an `<input type="file">`
  * in that case).
  */
-export async function openModelFileNative(): Promise<OpenedFile | null> {
+/** Opens models (.glb, .gltf, .fbx, .obj) and projects (.rcanim). */
+export async function openAnyFileNative(): Promise<OpenedFile | null> {
   if (!isTauri()) return null;
 
   const { open } = await import("@tauri-apps/plugin-dialog");
@@ -35,14 +38,28 @@ export async function openModelFileNative(): Promise<OpenedFile | null> {
 
   const selected = await open({
     multiple: false,
-    filters: [{ name: "3D Models", extensions: MODEL_EXTENSIONS }],
+    filters: [
+      { name: "Animator files", extensions: OPEN_EXTENSIONS },
+      { name: "3D Models", extensions: MODEL_EXTENSIONS },
+      { name: "Projects", extensions: PROJECT_EXTENSIONS },
+    ],
   });
 
   if (!selected || Array.isArray(selected)) return null;
 
   const bytes = await readFile(selected);
-  const name = selected.split(/[\\/]/).pop() ?? "model";
+  const name = selected.split(/[\\/]/).pop() ?? "file";
   return { name, data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer };
+}
+
+/** @deprecated Use openAnyFileNative */
+export async function openModelFileNative(): Promise<OpenedFile | null> {
+  return openAnyFileNative();
+}
+
+/** @deprecated Use openAnyFileNative */
+export async function openRcanimFileNative(): Promise<OpenedFile | null> {
+  return openAnyFileNative();
 }
 
 /**

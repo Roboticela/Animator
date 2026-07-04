@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { Clapperboard, FileDown, FileUp, Loader2, Spline } from "lucide-react";
+import { Clapperboard, FileDown, FileUp, Loader2, Paintbrush, Shapes, Spline } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useOpenModel } from "@/hooks/useOpenModel";
+import { useModelStore } from "@/store/modelStore";
 
 const FEATURES = [
   { icon: Spline, text: "Inspect every armature & bone" },
@@ -12,6 +13,8 @@ const FEATURES = [
 
 export function ImportDropzone() {
   const { openFile, loadFile, isLoading, error, inputRef, handleInputChange } = useOpenModel();
+  const showMaterials = useModelStore((s) => s.showMaterials);
+  const setShowMaterials = useModelStore((s) => s.setShowMaterials);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDrop = useCallback(
@@ -61,6 +64,28 @@ export function ImportDropzone() {
               {isLoading ? "Loading model…" : "Drag & drop a model here"}
             </p>
             <p className="mt-1 text-xs text-foreground/50">.glb, .gltf, .fbx or .obj</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={showMaterials ? "default" : "outline"}
+              disabled={isLoading}
+              onClick={() => setShowMaterials(true)}
+            >
+              <Paintbrush className="h-4 w-4" />
+              With materials
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={!showMaterials ? "default" : "outline"}
+              disabled={isLoading}
+              onClick={() => setShowMaterials(false)}
+            >
+              <Shapes className="h-4 w-4" />
+              Meshes only
+            </Button>
           </div>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button onClick={openFile} disabled={isLoading} size="sm" variant="default">

@@ -44,7 +44,11 @@ function parseObj(buffer: ArrayBuffer): { scene: THREE.Group; animations: THREE.
 }
 
 /** Loads a GLB/GLTF/FBX/OBJ buffer into ModelData. Yields to the main thread so the UI stays responsive. */
-export async function loadModelFromBuffer(buffer: ArrayBuffer, fileName: string): Promise<ModelData> {
+export async function loadModelFromBuffer(
+  buffer: ArrayBuffer,
+  fileName: string,
+  options?: { keepSourceBuffer?: boolean }
+): Promise<ModelData> {
   await yieldToMain();
 
   const ext = extensionOf(fileName);
@@ -93,6 +97,7 @@ export async function loadModelFromBuffer(buffer: ArrayBuffer, fileName: string)
     stats,
     sourceName: fileName,
     sourceExt: ext,
+    sourceBuffer: options?.keepSourceBuffer !== false ? buffer.slice(0) : undefined,
   };
 }
 

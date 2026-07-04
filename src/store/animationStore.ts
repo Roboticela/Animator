@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ClipMeta, CustomClipData } from "@/types/model";
+import type { RcanimPlaybackState } from "@/lib/rcanim-format";
 import { buildClipFromData } from "@/lib/clip-builder";
 import { clampTimelineZoom, fitTimelineZoom, TIMELINE_ZOOM_DEFAULT } from "@/lib/timeline-zoom";
 import { useModelStore } from "@/store/modelStore";
@@ -31,6 +32,7 @@ interface AnimationState {
   redoStack: HistoryEntry[];
 
   resetForNewModel: (clips: ClipMeta[]) => void;
+  restoreProject: (clips: ClipMeta[], playback: RcanimPlaybackState) => void;
   addClip: (clip: ClipMeta, activate?: boolean) => void;
   removeClip: (id: string) => void;
   renameClip: (id: string, name: string) => void;
@@ -99,6 +101,33 @@ export const useAnimationStore = create<AnimationState>((set, get) => ({
       duration: 0,
       playRangeStart: 0,
       playRangeEnd: 0,
+      undoStack: [],
+      redoStack: [],
+    });
+  },
+
+  restoreProject: (clips, playback) => {
+    const activeClip = clips.find((c) => c.id === playback.activeClipId) ?? clips[0];
+    const activeId = activeClip?.id ?? null;
+    applyActiveClipToEngine(activeClip, playback.loop);
+
+    const engine = useModelStore.getState().engine;
+    if (engine) {
+      engine.setSpeed(playback.speed);
+      if (activeClip) engine.seek(playback.currentTime);
+    }
+
+    set({
+      clips,
+      activeClipId: activeId,
+      isPlaying: false,
+      loop: playback.loop,
+      loopInRange: playback.loopInRange,
+      playRangeStart: playback.playRangeStart,
+      playRangeEnd: playback.playRangeEnd,
+      speed: playback.speed,
+      currentTime: activeClip ? playback.currentTime : 0,
+      duration: activeClip?.duration ?? 0,
       undoStack: [],
       redoStack: [],
     });

@@ -1,4 +1,5 @@
 import type { ClipMeta, ModelData } from "@/types/model";
+import type { RcanimPlaybackState, RcanimRestTransform } from "@/lib/rcanim-format";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { buildProceduralClip, getProceduralDef, type ProceduralAnimationId } from "@/lib/procedural";
@@ -25,6 +26,26 @@ export function loadModelIntoApp(data: ModelData) {
   }));
 
   useAnimationStore.getState().resetForNewModel(embeddedMetas);
+}
+
+/** Restores a .rcanim project without resetting clips to embedded GLB animations. */
+export function loadProjectIntoApp(
+  data: ModelData,
+  clips: ClipMeta[],
+  playback: RcanimPlaybackState,
+  restPose: Record<string, RcanimRestTransform>
+) {
+  useModelStore.getState().loadModel(data);
+
+  const map = new Map<string, { position: number[]; quaternion: number[]; scale: number[] }>();
+  const { boneMap } = useModelStore.getState();
+  for (const [name, pose] of Object.entries(restPose)) {
+    if (boneMap.has(name)) map.set(name, pose);
+  }
+  useModelStore.setState({ restPose: map });
+  useModelStore.getState().resetToRestPose();
+
+  useAnimationStore.getState().restoreProject(clips, playback);
 }
 
 function allBones() {

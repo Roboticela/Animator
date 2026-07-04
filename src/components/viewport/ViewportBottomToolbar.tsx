@@ -20,6 +20,7 @@ import {
   Layers2,
   ListTree,
   MousePointer2,
+  Paintbrush,
   ScanEye,
   Scissors,
   SplitSquareHorizontal,
@@ -66,6 +67,8 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
 
   const showMesh = useModelStore((s) => s.showMesh);
   const toggleShowMesh = useModelStore((s) => s.toggleShowMesh);
+  const showMaterials = useModelStore((s) => s.showMaterials);
+  const toggleShowMaterials = useModelStore((s) => s.toggleShowMaterials);
   const orthographicCamera = useModelStore((s) => s.orthographicCamera);
   const toggleOrthographicCamera = useModelStore((s) => s.toggleOrthographicCamera);
   const flatShading = useModelStore((s) => s.flatShading);
@@ -327,6 +330,15 @@ export function ViewportBottomToolbar({ viewportRoot }: ViewportBottomToolbarPro
           onPress={() => toggleShowMesh()}
         >
           {showMesh ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        </FeedbackButton>
+        <FeedbackButton
+          variant={showMaterials ? "default" : "ghost"}
+          size="icon"
+          title={showMaterials ? "Show materials & textures" : "Meshes only (flat shading)"}
+          disabled={!model}
+          onPress={() => toggleShowMaterials()}
+        >
+          <Paintbrush className={cn("h-4 w-4", !showMaterials && "opacity-45")} />
         </FeedbackButton>
         <FeedbackButton
           variant={orthographicCamera ? "default" : "ghost"}

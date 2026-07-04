@@ -1,10 +1,15 @@
 import { useCallback, useRef, type ChangeEvent } from "react";
-import { isTauri, openModelFileNative } from "@/lib/tauri";
+import { isTauri, openAnyFileNative } from "@/lib/tauri";
 import { loadModelFromBuffer, loadModelFromFile, ModelLoadError } from "@/lib/model-loader";
 import { loadModelIntoApp } from "@/lib/app-actions";
 import { buildSampleRig } from "@/lib/sample-rig";
+import { openRcanimFromFile, openRcanimFromNative, RcanimError, saveRcanimProject } from "@/lib/rcanim";
 import { yieldToMain } from "@/lib/yield-main";
 import { useModelStore } from "@/store/modelStore";
+
+function isRcanimFile(name: string): boolean {
+  return name.toLowerCase().endsWith(".rcanim");
+}
 
 export function useOpenModel() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,41 +50,104 @@ export function useOpenModel() {
     [setLoadError, setLoading]
   );
 
+  const loadProjectFile = useCallback(
+    async (file: File) => {
+      setLoadError(null);
+      setLoading(true, `Opening ${file.name}…`);
+      await yieldToMain();
+      try {
+        await openRcanimFromFile(file);
+      } catch (err) {
+        setLoadError(err instanceof RcanimError ? err.message : "Failed to open project.");
+        setLoading(false);
+      }
+    },
+    [setLoadError, setLoading]
+  );
+
   const loadSampleRig = useCallback(async () => {
     setLoadError(null);
-    setLoading(true, "Building sample rig…");
+    setLoading(true, "Building demo model…");
     await yieldToMain();
     try {
       const data = buildSampleRig();
       await yieldToMain();
       loadModelIntoApp(data);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to build sample rig.");
+      setLoadError(err instanceof Error ? err.message : "Failed to build demo model.");
       setLoading(false);
     }
   }, [setLoadError, setLoading]);
 
+  const openFromNative = useCallback(
+    async (opened: { name: string; data: ArrayBuffer }) => {
+      setLoadError(null);
+      setLoading(true, `Opening ${opened.name}…`);
+      await yieldToMain();
+      try {
+        if (isRcanimFile(opened.name)) {
+          await openRcanimFromNative(opened);
+        } else {
+          await loadBuffer(opened.data, opened.name);
+        }
+      } catch (err) {
+        if (err instanceof RcanimError) {
+          setLoadError(err.message);
+        } else if (err instanceof ModelLoadError) {
+          setLoadError(err.message);
+        } else {
+          setLoadError("Failed to open file.");
+        }
+        setLoading(false);
+      }
+    },
+    [loadBuffer, setLoadError, setLoading]
+  );
+
   const openFile = useCallback(async () => {
     if (isLoading) return;
     if (isTauri()) {
-      const opened = await openModelFileNative();
-      if (opened) {
-        await loadBuffer(opened.data, opened.name);
-        return;
-      }
+      const opened = await openAnyFileNative();
+      if (opened) await openFromNative(opened);
       return;
     }
     inputRef.current?.click();
-  }, [isLoading, loadBuffer]);
+  }, [isLoading, openFromNative]);
+
+  const saveProject = useCallback(async () => {
+    if (isLoading) return;
+    setLoadError(null);
+    setLoading(true, "Saving project…");
+    await yieldToMain();
+    try {
+      await saveRcanimProject();
+    } catch (err) {
+      setLoadError(err instanceof RcanimError ? err.message : "Failed to save project.");
+    } finally {
+      setLoading(false);
+    }
+  }, [isLoading, setLoadError, setLoading]);
 
   const handleInputChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       e.target.value = "";
-      if (file) void loadFile(file);
+      if (!file) return;
+      if (isRcanimFile(file.name)) void loadProjectFile(file);
+      else void loadFile(file);
     },
-    [loadFile]
+    [loadFile, loadProjectFile]
   );
 
-  return { openFile, loadFile, loadBuffer, loadSampleRig, isLoading, error, inputRef, handleInputChange };
+  return {
+    openFile,
+    saveProject,
+    loadFile,
+    loadBuffer,
+    loadSampleRig,
+    isLoading,
+    error,
+    inputRef,
+    handleInputChange,
+  };
 }
