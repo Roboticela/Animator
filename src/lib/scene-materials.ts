@@ -1,7 +1,24 @@
 import * as THREE from "three";
-import type { MeshPartInfo } from "@/types/model";
+import type { MeshPartInfo, SourceExtension } from "@/types/model";
 import { isSelectableMeshPart } from "@/lib/mesh-utils";
-import { commitMeshMaterials } from "@/lib/model-appearance";
+import {
+  commitMeshMaterials,
+  METALNESS_KEY,
+  ROUGHNESS_KEY,
+  metalnessToSpecular,
+  roughnessToShininess,
+  shininessToRoughness,
+  specularToMetalness,
+} from "@/lib/model-appearance";
+import {
+  auditMaterial,
+  collectMaterialMeshNames,
+  fixTextureColorSpace,
+  setStoredTexturePath,
+  type TextureIssue,
+  type TextureSlot,
+  type TextureSlotInfo,
+} from "@/lib/texture-maps";
 
 const PAINT_COLOR_KEY = "_animatorPaintColor";
 const COLOR_OPACITY_KEY = "_animatorColorOpacity";
@@ -18,6 +35,10 @@ export interface SceneMaterialSwatch {
   materialOpacity: number;
   hasMap: boolean;
   previewUrl: string | null;
+  materialType: string;
+  looksWhite: boolean;
+  issues: TextureIssue[];
+  slots: TextureSlotInfo[];
 }
 
 export interface MaterialPaintOptions {
@@ -91,8 +112,41 @@ function hasStoredTexture(material: THREE.Material): boolean {
   return getSourceMap(material) != null;
 }
 
-function storeSourceMap(material: THREE.MeshStandardMaterial, map: THREE.Texture | null | undefined): void {
+function storeSourceMap(
+  material: THREE.MeshPhongMaterial,
+  map: THREE.Texture | null | undefined
+): void {
   if (map) material.userData[SOURCE_MAP_KEY] = map;
+}
+
+function readRoughnessMetalness(material: THREE.Material): { roughness: number; metalness: number } {
+  if (material instanceof THREE.MeshStandardMaterial) {
+    return {
+      roughness: material.roughness ?? 0.5,
+      metalness: material.metalness ?? 0,
+    };
+  }
+  if (material instanceof THREE.MeshPhongMaterial) {
+    const storedRoughness = material.userData[ROUGHNESS_KEY];
+    const storedMetalness = material.userData[METALNESS_KEY];
+    return {
+      roughness:
+        typeof storedRoughness === "number"
+          ? storedRoughness
+          : shininessToRoughness(material.shininess ?? 30),
+      metalness:
+        typeof storedMetalness === "number"
+          ? storedMetalness
+          : specularToMetalness(material.specular ?? new THREE.Color(0x111111)),
+    };
+  }
+  if (material instanceof THREE.MeshLambertMaterial) {
+    return { roughness: 0.9, metalness: 0 };
+  }
+  if (material instanceof THREE.MeshBasicMaterial) {
+    return { roughness: 1, metalness: 0 };
+  }
+  return { roughness: 0.72, metalness: 0.08 };
 }
 
 function readStoredColorOpacity(material: THREE.Material): number {
@@ -119,11 +173,12 @@ function readPbr(material: THREE.Material): {
   const materialOpacity = readStoredMaterialOpacity(material);
   const paintColor = readPaintColor(material);
   const hasMap = hasStoredTexture(material);
+  const { roughness, metalness } = readRoughnessMetalness(material);
   if (material instanceof THREE.MeshStandardMaterial) {
     return {
       color: paintColor,
-      roughness: material.roughness ?? 0.5,
-      metalness: material.metalness ?? 0,
+      roughness,
+      metalness,
       colorOpacity,
       materialOpacity,
       hasMap,
@@ -132,8 +187,8 @@ function readPbr(material: THREE.Material): {
   if (material instanceof THREE.MeshPhongMaterial) {
     return {
       color: paintColor,
-      roughness: 0.55,
-      metalness: 0.05,
+      roughness,
+      metalness,
       colorOpacity,
       materialOpacity,
       hasMap,
@@ -174,10 +229,12 @@ function readPbr(material: THREE.Material): {
  * Material opacity controls overall surface transparency.
  */
 function applyPaintAppearance(
-  material: THREE.MeshStandardMaterial,
+  material: THREE.MeshPhongMaterial,
   paintColor: string,
   colorOpacity: number,
-  materialOpacity: number
+  materialOpacity: number,
+  roughness: number,
+  metalness: number
 ): void {
   const colorOp = THREE.MathUtils.clamp(colorOpacity, 0, 1);
   const matOp = THREE.MathUtils.clamp(materialOpacity, 0, 1);
@@ -186,11 +243,17 @@ function applyPaintAppearance(
   material.userData[PAINT_COLOR_KEY] = paintColor;
   material.userData[COLOR_OPACITY_KEY] = colorOp;
   material.userData[MATERIAL_OPACITY_KEY] = matOp;
+  material.userData[ROUGHNESS_KEY] = roughness;
+  material.userData[METALNESS_KEY] = metalness;
   if (sourceMap) storeSourceMap(material, sourceMap);
 
   const userColor = new THREE.Color(paintColor);
   const white = new THREE.Color(1, 1, 1);
-  material.color.copy(white).lerp(userColor, colorOp);
+  if (colorOp >= 0.999) {
+    material.color.copy(userColor);
+  } else {
+    material.color.copy(white).lerp(userColor, colorOp);
+  }
 
   if (sourceMap) {
     material.map = sourceMap;
@@ -199,8 +262,9 @@ function applyPaintAppearance(
     material.map = null;
   }
 
+  material.shininess = roughnessToShininess(roughness);
+  material.specular.copy(metalnessToSpecular(metalness));
   material.alphaMap = null;
-  material.envMapIntensity = 1;
   material.opacity = matOp;
   material.transparent = matOp < 0.999;
   material.depthWrite = matOp >= 0.999;
@@ -238,9 +302,13 @@ export function clearMaterialPreviewCache(): void {
 }
 
 /** Unique materials currently used in the scene — for the textures palette. */
-export function collectSceneMaterials(root: THREE.Object3D): SceneMaterialSwatch[] {
+export function collectSceneMaterials(
+  root: THREE.Object3D,
+  sourceExt?: SourceExtension
+): SceneMaterialSwatch[] {
   const seen = new Set<string>();
   const swatches: SceneMaterialSwatch[] = [];
+  const meshNamesByMaterial = collectMaterialMeshNames(root);
 
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
@@ -250,6 +318,11 @@ export function collectSceneMaterials(root: THREE.Object3D): SceneMaterialSwatch
       if (!material || seen.has(material.uuid)) continue;
       seen.add(material.uuid);
       const pbr = readPbr(material);
+      const report = auditMaterial(
+        material,
+        meshNamesByMaterial.get(material.uuid) ?? [],
+        sourceExt
+      );
       swatches.push({
         id: material.uuid,
         name: material.name?.trim() || `Material ${swatches.length + 1}`,
@@ -260,11 +333,28 @@ export function collectSceneMaterials(root: THREE.Object3D): SceneMaterialSwatch
         materialOpacity: pbr.materialOpacity,
         hasMap: pbr.hasMap,
         previewUrl: texturePreviewUrl(material),
+        materialType: report.materialType,
+        looksWhite: report.looksWhite,
+        issues: report.issues,
+        slots: report.slots,
       });
     }
   });
 
   return swatches.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getMaterialIdsForParts(parts: MeshPartInfo[]): string[] {
+  const ids = new Set<string>();
+  for (const part of parts) {
+    if (!part.mesh) continue;
+    const materials = ensureMaterialArray(part.mesh);
+    for (const index of materialIndicesForPart(part)) {
+      const material = materials[index];
+      if (material) ids.add(material.uuid);
+    }
+  }
+  return [...ids];
 }
 
 export function findSceneMaterialById(root: THREE.Object3D, materialId: string): THREE.Material | null {
@@ -325,37 +415,69 @@ function resolveMaterialOpacity(options: MaterialPaintOptions, source: THREE.Mat
   return 1;
 }
 
-function toStandardMaterial(
+function toPhongMaterial(
   source: THREE.Material | null,
   options: MaterialPaintOptions
-): THREE.MeshStandardMaterial {
+): THREE.MeshPhongMaterial {
   const paintColor = options.color;
-  const roughness = options.roughness ?? 0.72;
-  const metalness = options.metalness ?? 0.08;
   const colorOpacity = resolveColorOpacity(options, source);
   const materialOpacity = resolveMaterialOpacity(options, source);
+  const sourcePbr = source ? readRoughnessMetalness(source) : { roughness: 0.72, metalness: 0.08 };
+  const roughness = options.roughness ?? sourcePbr.roughness;
+  const metalness = options.metalness ?? sourcePbr.metalness;
 
-  if (source instanceof THREE.MeshStandardMaterial) {
+  if (source instanceof THREE.MeshPhongMaterial) {
     const next = source.clone();
-    next.roughness = roughness;
-    next.metalness = metalness;
     const sourceMap = getSourceMap(source);
     if (sourceMap) storeSourceMap(next, sourceMap);
-    applyPaintAppearance(next, paintColor, colorOpacity, materialOpacity);
+    applyPaintAppearance(next, paintColor, colorOpacity, materialOpacity, roughness, metalness);
     return next;
   }
 
-  const next = new THREE.MeshStandardMaterial({ color: paintColor, roughness, metalness });
-  if (
-    source &&
-    (source instanceof THREE.MeshPhongMaterial ||
-      source instanceof THREE.MeshLambertMaterial ||
-      source instanceof THREE.MeshBasicMaterial) &&
-    source.map
-  ) {
-    storeSourceMap(next, source.map);
+  const next = new THREE.MeshPhongMaterial({
+    color: paintColor,
+    shininess: roughnessToShininess(roughness),
+    specular: metalnessToSpecular(metalness),
+  });
+
+  if (source instanceof THREE.MeshStandardMaterial) {
+    next.color.copy(source.color);
+    next.map = source.map;
+    next.normalMap = source.normalMap;
+    next.normalScale.copy(source.normalScale);
+    next.emissive.copy(source.emissive);
+    next.emissiveMap = source.emissiveMap;
+    next.emissiveIntensity = source.emissiveIntensity ?? 1;
+    next.transparent = source.transparent;
+    next.opacity = source.opacity;
+    next.alphaMap = source.alphaMap;
+    next.side = source.side;
+    next.vertexColors = source.vertexColors;
+    if (source.map) storeSourceMap(next, source.map);
+  } else if (source instanceof THREE.MeshLambertMaterial) {
+    next.color.copy(source.color);
+    next.map = source.map;
+    next.emissive.copy(source.emissive);
+    next.emissiveMap = source.emissiveMap;
+    next.emissiveIntensity = source.emissiveIntensity ?? 1;
+    next.transparent = source.transparent;
+    next.opacity = source.opacity;
+    next.alphaMap = source.alphaMap;
+    next.side = source.side;
+    next.vertexColors = source.vertexColors;
+    if (source.map) storeSourceMap(next, source.map);
+  } else if (source instanceof THREE.MeshBasicMaterial) {
+    next.color.copy(source.color);
+    next.map = source.map;
+    next.transparent = source.transparent;
+    next.opacity = source.opacity;
+    next.alphaMap = source.alphaMap;
+    next.side = source.side;
+    next.vertexColors = source.vertexColors;
+    if (source.map) storeSourceMap(next, source.map);
   }
-  applyPaintAppearance(next, paintColor, colorOpacity, materialOpacity);
+
+  applyPaintAppearance(next, paintColor, colorOpacity, materialOpacity, roughness, metalness);
   return next;
 }
 
@@ -381,7 +503,7 @@ export function applyColorToParts(parts: MeshPartInfo[], options: MaterialPaintO
     let materials = ensureMaterialArray(mesh);
     for (const index of indices) {
       const current = materials[index] ?? materials[0] ?? null;
-      const next = toStandardMaterial(current, options);
+      const next = toPhongMaterial(current, options);
       materials = setMaterialAtIndex(mesh, index, next);
     }
     commitMeshMaterials(mesh, materials.length === 1 ? materials[0]! : materials);
@@ -425,13 +547,16 @@ export function readPartMaterialColor(parts: MeshPartInfo[]): (MaterialPaintOpti
   return { color, roughness, metalness, colorOpacity, materialOpacity, hasTexture };
 }
 
-export async function applyTextureMapToParts(parts: MeshPartInfo[], file: File): Promise<void> {
+export async function applyTextureMapToParts(
+  parts: MeshPartInfo[],
+  file: File,
+  slot: TextureSlot = "map"
+): Promise<void> {
   const url = URL.createObjectURL(file);
   try {
     const loader = new THREE.TextureLoader();
     const texture = await loader.loadAsync(url);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
+    fixTextureColorSpace(texture, slot);
 
     for (const part of parts) {
       if (!isSelectableMeshPart(part) || !part.mesh) continue;
@@ -443,7 +568,7 @@ export async function applyTextureMapToParts(parts: MeshPartInfo[], file: File):
         const current = materials[index] ?? materials[0] ?? null;
         const pbr = current ? readPbr(current) : null;
         const paintColor = pbr?.color ?? "#ffffff";
-        const next = toStandardMaterial(current, {
+        const next = toPhongMaterial(current, {
           color: paintColor,
           roughness: pbr?.roughness ?? 0.72,
           metalness: pbr?.metalness ?? 0.08,
@@ -451,13 +576,20 @@ export async function applyTextureMapToParts(parts: MeshPartInfo[], file: File):
           materialOpacity: pbr?.materialOpacity ?? 1,
         });
         const clonedTexture = texture.clone();
-        clonedTexture.needsUpdate = true;
-        storeSourceMap(next, clonedTexture);
+        fixTextureColorSpace(clonedTexture, slot);
+        if (slot === "map") {
+          storeSourceMap(next, clonedTexture);
+        } else if (next instanceof THREE.MeshPhongMaterial) {
+          next[slot] = clonedTexture;
+        }
+        setStoredTexturePath(next, slot, file.name);
         applyPaintAppearance(
           next,
           paintColor,
           pbr?.colorOpacity ?? 1,
-          pbr?.materialOpacity ?? 1
+          pbr?.materialOpacity ?? 1,
+          pbr?.roughness ?? 0.72,
+          pbr?.metalness ?? 0.08
         );
         materials = setMaterialAtIndex(mesh, index, next);
       }

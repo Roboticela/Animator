@@ -71,13 +71,18 @@ export async function saveBytes(
   data: Uint8Array,
   extension: string
 ): Promise<boolean> {
+  const label =
+    extension === "zip"
+      ? "ZIP archive"
+      : extension.toUpperCase();
+
   if (isTauri()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
     const { writeFile } = await import("@tauri-apps/plugin-fs");
 
     const path = await save({
       defaultPath: defaultName,
-      filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
+      filters: [{ name: label, extensions: [extension] }],
     });
 
     if (!path) return false;
@@ -101,4 +106,83 @@ export async function saveBytes(
 export async function openLink(url: string) {
   if (!url || typeof window === "undefined") return;
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+const IMAGE_FILE_EXT = /\.(png|jpe?g|webp|bmp|tga|gif|hdr)$/i;
+
+function imageMimeType(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".bmp")) return "image/bmp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  return "application/octet-stream";
+}
+
+function isImageFileName(name: string): boolean {
+  return IMAGE_FILE_EXT.test(name);
+}
+
+function fileWithRelativePath(bytes: Uint8Array, name: string, relativePath: string): File {
+  const file = new File([new Uint8Array(bytes)], name, { type: imageMimeType(name) });
+  Object.defineProperty(file, "webkitRelativePath", { value: relativePath, configurable: true });
+  return file;
+}
+
+async function collectImageFilesFromDir(
+  dirPath: string,
+  rootName: string,
+  relativePrefix: string,
+  out: File[]
+): Promise<void> {
+  const { readDir, readFile } = await import("@tauri-apps/plugin-fs");
+  const { join } = await import("@tauri-apps/api/path");
+
+  let entries;
+  try {
+    entries = await readDir(dirPath);
+  } catch (err) {
+    throw new Error(
+      `Cannot read folder "${dirPath}": ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+
+  for (const entry of entries) {
+    const entryPath = await join(dirPath, entry.name);
+    const rel = relativePrefix ? `${relativePrefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory) {
+      await collectImageFilesFromDir(entryPath, rootName, rel, out);
+      continue;
+    }
+    if (!entry.isFile || !isImageFileName(entry.name)) continue;
+    try {
+      const bytes = await readFile(entryPath);
+      out.push(fileWithRelativePath(bytes, entry.name, `${rootName}/${rel}`));
+    } catch {
+      // Skip unreadable files instead of failing the whole import.
+    }
+  }
+}
+
+/**
+ * Native folder picker (Tauri). Returns image files with webkitRelativePath set for texture matching.
+ */
+export async function openTextureFolderNative(): Promise<File[] | null> {
+  if (!isTauri()) return null;
+
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({
+    directory: true,
+    multiple: false,
+    title: "Select textures folder",
+  });
+
+  if (!selected || Array.isArray(selected)) return null;
+
+  const dirPath = selected;
+  const rootName = dirPath.split(/[\\/]/).pop() ?? "textures";
+  const files: File[] = [];
+  await collectImageFilesFromDir(dirPath, rootName, "", files);
+  return files;
 }

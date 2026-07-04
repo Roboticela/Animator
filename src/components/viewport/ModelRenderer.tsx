@@ -57,7 +57,7 @@ export function ModelRenderer() {
       const groups = mesh.geometry?.groups ?? [];
 
       materials.forEach((m, materialIndex) => {
-        const material = m as THREE.MeshStandardMaterial;
+        const material = m as THREE.MeshPhongMaterial;
         if (!material || !("emissive" in material) || !(material.emissive instanceof THREE.Color)) return;
         if ("wireframe" in material) material.wireframe = wireframe;
         if ("flatShading" in material) material.flatShading = flatShading;

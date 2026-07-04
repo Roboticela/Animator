@@ -1,17 +1,19 @@
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Clapperboard, Move3d, Paintbrush } from "lucide-react";
+import { Clapperboard, Code2, Move3d, Paintbrush } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { TransformInspector } from "@/components/panels/TransformInspector";
 import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
 import { TexturesPanel } from "@/components/panels/TexturesPanel";
+import { HtmlTo3dPanel } from "@/components/panels/HtmlTo3dPanel";
 
-type PropertiesTab = "transform" | "textures" | "library";
+type PropertiesTab = "transform" | "textures" | "html3d" | "library";
 
 const PROPERTIES_TABS: { id: PropertiesTab; label: string; icon: LucideIcon }[] = [
   { id: "transform", label: "Transform", icon: Move3d },
   { id: "textures", label: "Textures", icon: Paintbrush },
+  { id: "html3d", label: "HTML 3D", icon: Code2 },
   { id: "library", label: "Animations", icon: Clapperboard },
 ];
 
@@ -52,6 +54,7 @@ export function PropertiesPanel() {
       >
         {tab === "transform" && <TransformInspector embedded />}
         {tab === "textures" && <TexturesPanel embedded />}
+        {tab === "html3d" && <HtmlTo3dPanel embedded />}
         {tab === "library" && <AnimationLibraryPanel embedded />}
       </div>
     </Panel>

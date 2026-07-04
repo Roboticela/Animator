@@ -52,6 +52,8 @@ export interface ModelData {
   sourceExt: SourceExtension;
   /** Original file bytes when loaded from disk — used for lossless .rcanim round-trip. */
   sourceBuffer?: ArrayBuffer;
+  /** Textures were linked from disk and should be baked into GLB when saving .rcanim. */
+  texturesEmbedded?: boolean;
 }
 
 export type ClipSource = "embedded" | "premade" | "custom";

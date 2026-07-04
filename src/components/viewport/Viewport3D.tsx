@@ -13,6 +13,8 @@ import { ViewportCamera } from "@/components/viewport/ViewportCamera";
 import { AnimationDriver } from "@/components/viewport/AnimationDriver";
 import { MeshEditOverlayLayer } from "@/components/viewport/MeshEditOverlayLayer";
 import { MeshViewportInteractor } from "@/components/viewport/MeshViewportInteractor";
+import { ReferencesRenderer } from "@/components/viewport/ReferencesRenderer";
+import { ReferenceViewportInteractor } from "@/components/viewport/ReferenceViewportInteractor";
 import { ViewportHoverClear } from "@/components/viewport/ViewportHoverClear";
 import { useViewportThemeColors } from "@/hooks/useViewportThemeColors";
 
@@ -25,8 +27,10 @@ function SceneAxes() {
 
 function SceneContent() {
   const model = useModelStore((s) => s.model);
+  const references = useModelStore((s) => s.references);
   const showGrid = useModelStore((s) => s.showGrid);
   const showShadows = useModelStore((s) => s.showShadows);
+  const hasInteractives = Boolean(model) || references.length > 0;
   const { background, gridCell, gridSection } = useViewportThemeColors();
 
   return (
@@ -51,11 +55,13 @@ function SceneContent() {
       <SceneAxes />
 
       {model && <ModelRenderer />}
+      {references.length > 0 && <ReferencesRenderer />}
       {model && <SkeletonOverlay />}
-      {model && <GizmoController />}
+      {hasInteractives && <GizmoController />}
       {model && <MeshEditOverlayLayer />}
       {model && <MeshViewportInteractor />}
-      {model && <ViewportHoverClear />}
+      {references.length > 0 && <ReferenceViewportInteractor />}
+      {hasInteractives && <ViewportHoverClear />}
       {model && showShadows && showGrid && (
         <ContactShadows position={[0, 0.001, 0]} opacity={0.4} scale={12} blur={2.2} far={4} />
       )}

@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
   ChevronDown,
+  Code2,
   Cuboid,
   ExternalLink,
   FileDown,
   FileUp,
   FileX2,
+  Image,
   Info,
   Keyboard,
   Layers3,
@@ -37,6 +39,7 @@ import { useTheme, THEMES } from "@/contexts/ThemeContext";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { useOpenModel } from "@/hooks/useOpenModel";
+import { useImportReference } from "@/hooks/useImportReference";
 import { openLink } from "@/lib/tauri";
 import { GuideModal } from "@/components/modals/GuideModal";
 import { AboutModal } from "@/components/modals/AboutModal";
@@ -44,6 +47,7 @@ import { AnimationLibraryModal } from "@/components/modals/AnimationLibraryModal
 import { ExportModal } from "@/components/modals/ExportModal";
 import { SceneInfoModal } from "@/components/modals/SceneInfoModal";
 import { ShortcutsModal } from "@/components/modals/ShortcutsModal";
+import { HtmlTo3dModal } from "@/components/modals/HtmlTo3dModal";
 import { cn } from "@/lib/utils";
 
 const ROBOTICELA_SITE_URL = "https://roboticela.com";
@@ -60,6 +64,11 @@ export function AppHeader() {
   const showMaterials = useModelStore((s) => s.showMaterials);
   const toggleShowMaterials = useModelStore((s) => s.toggleShowMaterials);
   const { openFile, saveProject, loadSampleRig, isLoading, error, inputRef, handleInputChange } = useOpenModel();
+  const {
+    inputRef: referenceInputRef,
+    openReferenceFile,
+    handleInputChange: handleReferenceInputChange,
+  } = useImportReference();
 
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -67,6 +76,8 @@ export function AppHeader() {
   const [exportOpen, setExportOpen] = useState(false);
   const [sceneInfoOpen, setSceneInfoOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [htmlTo3dOpen, setHtmlTo3dOpen] = useState(false);
+  const [htmlReferenceOpen, setHtmlReferenceOpen] = useState(false);
 
   const currentTheme = THEMES.find((t) => t.name === theme);
 
@@ -171,6 +182,13 @@ export function AppHeader() {
             className="hidden"
             onChange={handleInputChange}
           />
+          <input
+            ref={referenceInputRef}
+            type="file"
+            accept=".glb,.gltf,.fbx,.obj"
+            className="hidden"
+            onChange={handleReferenceInputChange}
+          />
 
           <Button
             variant={showMaterials ? "default" : "outline"}
@@ -239,6 +257,44 @@ export function AppHeader() {
             variant="outline"
             size="sm"
             className="gap-2 whitespace-nowrap"
+            onClick={() => setHtmlTo3dOpen(true)}
+            disabled={isLoading}
+            title="HTML / CSS / JS to 3D"
+          >
+            <Code2 className="h-4 w-4" />
+            <span className="hidden lg:inline">HTML → 3D</span>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="group gap-2 whitespace-nowrap"
+                disabled={isLoading}
+                title="Import viewport reference (not saved in project)"
+              >
+                <Image className="h-4 w-4" />
+                <span className="hidden lg:inline">Import Reference</span>
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem className="cursor-pointer" onClick={() => void openReferenceFile()}>
+                <Cuboid className="h-4 w-4" />
+                <span>3D model reference</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => setHtmlReferenceOpen(true)}>
+                <Code2 className="h-4 w-4" />
+                <span>HTML reference</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 whitespace-nowrap"
             onClick={() => setSceneInfoOpen(true)}
             disabled={!model || isLoading}
             title="Scene statistics and model details"
@@ -278,6 +334,12 @@ export function AppHeader() {
               <div className="lg:hidden">{themeSubmenu}</div>
 
               <AnimatePresence>
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setHtmlTo3dOpen(true)}>
+                    <Code2 className="h-4 w-4" />
+                    <span>HTML to 3D</span>
+                  </DropdownMenuItem>
+                </motion.div>
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                   <DropdownMenuItem className="cursor-pointer" onClick={() => void loadSampleRig()} disabled={isLoading}>
                     <Cuboid className="h-4 w-4" />
@@ -356,6 +418,12 @@ export function AppHeader() {
       <ExportModal isOpen={exportOpen} onClose={() => setExportOpen(false)} />
       <SceneInfoModal isOpen={sceneInfoOpen} onClose={() => setSceneInfoOpen(false)} />
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <HtmlTo3dModal isOpen={htmlTo3dOpen} onClose={() => setHtmlTo3dOpen(false)} />
+      <HtmlTo3dModal
+        isOpen={htmlReferenceOpen}
+        onClose={() => setHtmlReferenceOpen(false)}
+        mode="reference"
+      />
     </>
   );
 }

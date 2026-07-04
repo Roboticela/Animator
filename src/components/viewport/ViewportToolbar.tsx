@@ -75,15 +75,19 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
   const requestFrameCamera = useModelStore((s) => s.requestFrameCamera);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const selectedReferenceIds = useModelStore((s) => s.selectedReferenceIds);
   const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const meshElementMode = useModelStore((s) => s.meshElementMode);
   const model = useModelStore((s) => s.model);
   const hasBoneSelection = selectedBoneNames.length > 0;
   const hasPartSelection = selectedMeshUuids.length > 0;
+  const hasReferenceSelection = selectedReferenceIds.length > 0;
   const hasTransformSelection =
     viewportSelectionTarget === "bones"
       ? hasBoneSelection
-      : hasPartSelection && meshElementMode === "object";
+      : viewportSelectionTarget === "references"
+        ? hasReferenceSelection
+        : hasPartSelection && meshElementMode === "object";
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">

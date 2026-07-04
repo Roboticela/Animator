@@ -74,11 +74,14 @@ async function encodeModelPayload(model: NonNullable<ReturnType<typeof useModelS
   let bytes: Uint8Array;
   let sourceExt = model.sourceExt;
 
-  if (model.sourceBuffer && model.sourceBuffer.byteLength > 0) {
-    bytes = new Uint8Array(model.sourceBuffer);
+  const useOriginalBytes =
+    model.sourceBuffer && model.sourceBuffer.byteLength > 0 && !model.texturesEmbedded;
+
+  if (useOriginalBytes) {
+    bytes = new Uint8Array(model.sourceBuffer!);
   } else {
     useModelStore.getState().resetToRestPose();
-    const glbBuffer = await exportModelAsGlb(model.object3D, []);
+    const glbBuffer = await exportModelAsGlb(model.object3D, model.embeddedClips ?? []);
     bytes = new Uint8Array(glbBuffer);
     sourceExt = "glb";
   }

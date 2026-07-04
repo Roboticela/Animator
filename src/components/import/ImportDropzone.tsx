@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { Clapperboard, FileDown, FileUp, Loader2, Paintbrush, Shapes, Spline } from "lucide-react";
+import { Clapperboard, FileDown, FileUp, Loader2, Paintbrush, Shapes, Spline, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { HtmlTo3dModal } from "@/components/modals/HtmlTo3dModal";
 import { useOpenModel } from "@/hooks/useOpenModel";
 import { useModelStore } from "@/store/modelStore";
 
@@ -16,6 +17,7 @@ export function ImportDropzone() {
   const showMaterials = useModelStore((s) => s.showMaterials);
   const setShowMaterials = useModelStore((s) => s.setShowMaterials);
   const [isDragging, setIsDragging] = useState(false);
+  const [htmlTo3dOpen, setHtmlTo3dOpen] = useState(false);
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -99,6 +101,19 @@ export function ImportDropzone() {
 
         <div className="my-6 flex items-center gap-3 text-xs text-foreground/50">
           <div className="h-px flex-1 bg-border" />
+          or
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setHtmlTo3dOpen(true)} disabled={isLoading}>
+            <Code2 className="h-4 w-4" />
+            Create from HTML
+          </Button>
+        </div>
+
+        <div className="my-6 flex items-center gap-3 text-xs text-foreground/50">
+          <div className="h-px flex-1 bg-border" />
           or use Menu → Load Sample Rig
           <div className="h-px flex-1 bg-border" />
         </div>
@@ -118,6 +133,7 @@ export function ImportDropzone() {
           ))}
         </div>
       </motion.div>
+      <HtmlTo3dModal isOpen={htmlTo3dOpen} onClose={() => setHtmlTo3dOpen(false)} />
     </div>
   );
 }

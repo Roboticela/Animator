@@ -5,6 +5,7 @@ import {
   ClipboardPaste,
   Copy,
   Diamond,
+  Image,
   Link2,
   Maximize2,
   Move3d,
@@ -17,7 +18,7 @@ import { NumberInput } from "@/components/ui/NumberInput";
 import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { useModelStore, getPrimaryBoneName, getPrimaryMeshPartId } from "@/store/modelStore";
+import { useModelStore, getPrimaryBoneName, getPrimaryMeshPartId, getPrimaryReferenceId } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import {
   resetSelectedBones,
@@ -77,13 +78,23 @@ function EmptyState({ icon: Icon, title, description }: { icon: typeof Move3d; t
   );
 }
 
-function NoSelectionEmpty({ mode }: { mode: "bones" | "parts" }) {
+function NoSelectionEmpty({ mode }: { mode: "bones" | "parts" | "references" }) {
   if (mode === "parts") {
     return (
       <EmptyState
         icon={Box}
         title="Nothing selected"
         description="Select a mesh part in the explorer or viewport. Use Object mode (1) and W/E/R to move, rotate, or scale."
+      />
+    );
+  }
+
+  if (mode === "references") {
+    return (
+      <EmptyState
+        icon={Image}
+        title="Nothing selected"
+        description="Select a reference in the References tab or viewport. References are viewport guides only and are not saved with the project."
       />
     );
   }
@@ -429,11 +440,14 @@ export function TransformInspector({ embedded }: { embedded?: boolean } = {}) {
   const meshParts = useModelStore((s) => s.meshParts);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const references = useModelStore((s) => s.references);
+  const selectedReferenceIds = useModelStore((s) => s.selectedReferenceIds);
   const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const meshElementMode = useModelStore((s) => s.meshElementMode);
 
   const activeClip = useAnimationStore((s) => s.clips.find((c) => c.id === s.activeClipId));
 
+  const editingReferences = viewportSelectionTarget === "references";
   const editingParts = viewportSelectionTarget === "parts" && meshElementMode === "object";
   const [uniformScale, setUniformScale] = useState(true);
 
@@ -443,6 +457,9 @@ export function TransformInspector({ embedded }: { embedded?: boolean } = {}) {
   const primaryPartId = getPrimaryMeshPartId(selectedMeshUuids);
   const primaryPart = primaryPartId ? meshParts.find((p) => p.id === primaryPartId && isSelectableMeshPart(p)) : undefined;
   const primaryMesh = primaryPart?.mesh;
+
+  const primaryRefId = getPrimaryReferenceId(selectedReferenceIds);
+  const primaryReference = primaryRefId ? references.find((ref) => ref.id === primaryRefId) : undefined;
 
   const selectedMeshes = useMemo(() => {
     const meshes = new Map<string, Mesh>();
@@ -461,7 +478,17 @@ export function TransformInspector({ embedded }: { embedded?: boolean } = {}) {
     [selectedBoneNames, boneMap]
   );
 
-  const targetId = editingParts ? primaryMesh?.uuid ?? null : primaryName;
+  const selectedReferenceRoots = useMemo(() => {
+    return selectedReferenceIds
+      .map((id) => references.find((ref) => ref.id === id)?.root)
+      .filter((root): root is import("three").Object3D => Boolean(root));
+  }, [references, selectedReferenceIds]);
+
+  const targetId = editingReferences
+    ? primaryRefId
+    : editingParts
+      ? primaryMesh?.uuid ?? null
+      : primaryName;
 
   const [, setTick] = useState(0);
   const refreshValues = () => setTick((n) => n + 1);
@@ -478,7 +505,66 @@ export function TransformInspector({ embedded }: { embedded?: boolean } = {}) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [targetId, editingParts]);
+  }, [targetId, editingParts, editingReferences]);
+
+  if (editingReferences) {
+    if (!primaryReference?.root) {
+      return (
+        <TransformShell embedded={embedded}>
+          <NoSelectionEmpty mode="references" />
+        </TransformShell>
+      );
+    }
+
+    const applyToReferences = (fn: (root: import("three").Object3D) => void) => {
+      for (const root of selectedReferenceRoots) fn(root);
+      updateObjectHierarchy(selectedReferenceRoots);
+    };
+
+    return (
+      <TransformShell embedded={embedded}>
+        <TransformEditor
+          multiCount={selectedReferenceRoots.length}
+          values={{
+            position: [
+              primaryReference.root.position.x,
+              primaryReference.root.position.y,
+              primaryReference.root.position.z,
+            ],
+            rotationDeg: [
+              primaryReference.root.rotation.x * RAD2DEG,
+              primaryReference.root.rotation.y * RAD2DEG,
+              primaryReference.root.rotation.z * RAD2DEG,
+            ],
+            scale: [
+              primaryReference.root.scale.x,
+              primaryReference.root.scale.y,
+              primaryReference.root.scale.z,
+            ],
+          }}
+          uniformScale={uniformScale}
+          onUniformScaleChange={setUniformScale}
+          onPosition={(i, v) => {
+            applyToReferences((root) => root.position.setComponent(i, v));
+            refreshValues();
+          }}
+          onRotation={(i, v) => {
+            const rad = v * DEG2RAD;
+            applyToReferences((root) => {
+              if (i === 0) root.rotation.x = rad;
+              else if (i === 1) root.rotation.y = rad;
+              else root.rotation.z = rad;
+            });
+            refreshValues();
+          }}
+          onScale={(i, v) => {
+            applyToReferences((root) => root.scale.setComponent(i, v));
+            refreshValues();
+          }}
+        />
+      </TransformShell>
+    );
+  }
 
   if (editingParts) {
     if (!primaryMesh || !primaryPart) {

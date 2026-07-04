@@ -3,7 +3,7 @@ import { TransformControls } from "@react-three/drei";
 import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
-import { useModelStore, getPrimaryBoneName, getPrimaryMeshPartId } from "@/store/modelStore";
+import { useModelStore, getPrimaryBoneName, getPrimaryMeshPartId, getPrimaryReferenceId } from "@/store/modelStore";
 import { useAnimationStore } from "@/store/animationStore";
 import {
   applyPrimaryDelta,
@@ -22,8 +22,10 @@ import { isSelectableMeshPart } from "@/lib/mesh-utils";
 export function GizmoController() {
   const boneMap = useModelStore((s) => s.boneMap);
   const meshParts = useModelStore((s) => s.meshParts);
+  const references = useModelStore((s) => s.references);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const selectedReferenceIds = useModelStore((s) => s.selectedReferenceIds);
   const sceneRadius = useModelStore((s) => s.sceneRadius);
   const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const meshElementMode = useModelStore((s) => s.meshElementMode);
@@ -33,6 +35,7 @@ export function GizmoController() {
 
   const pickingBones = viewportSelectionTarget === "bones";
   const pickingParts = viewportSelectionTarget === "parts" && meshElementMode === "object";
+  const pickingReferences = viewportSelectionTarget === "references";
 
   const primaryName = getPrimaryBoneName(selectedBoneNames);
   const primaryBone = primaryName ? boneMap.get(primaryName)?.bone : undefined;
@@ -52,7 +55,28 @@ export function GizmoController() {
     return meshParts.find((p) => p.id === primaryPartId && p.mesh)?.mesh;
   }, [meshParts, primaryPartId]);
 
-  const gizmoObject = pickingBones ? primaryBone : pickingParts ? primaryMesh : undefined;
+  const primaryRefId = getPrimaryReferenceId(selectedReferenceIds);
+  const primaryReference = useMemo(() => {
+    if (!primaryRefId) return undefined;
+    return references.find((ref) => ref.id === primaryRefId)?.root;
+  }, [references, primaryRefId]);
+
+  const selectedReferenceRoots = useMemo(() => {
+    const roots = new Map<string, import("three").Object3D>();
+    for (const id of selectedReferenceIds) {
+      const ref = references.find((r) => r.id === id);
+      if (ref) roots.set(ref.id, ref.root);
+    }
+    return [...roots.values()];
+  }, [references, selectedReferenceIds]);
+
+  const gizmoObject = pickingBones
+    ? primaryBone
+    : pickingParts
+      ? primaryMesh
+      : pickingReferences
+        ? primaryReference
+        : undefined;
 
   const controlsRef = useRef<TransformControlsImpl>(null);
   const boneSnapshots = useRef<Map<string, BoneTransformSnapshot>>(new Map());
@@ -64,6 +88,8 @@ export function GizmoController() {
   const primaryBoneRef = useRef(primaryName);
   const selectedMeshesRef = useRef(selectedMeshes);
   const primaryMeshRef = useRef(primaryMesh);
+  const selectedReferenceRootsRef = useRef(selectedReferenceRoots);
+  const primaryReferenceRef = useRef(primaryReference);
 
   useEffect(() => {
     selectedBonesRef.current = selectedBoneNames;
@@ -80,6 +106,12 @@ export function GizmoController() {
   useEffect(() => {
     primaryMeshRef.current = primaryMesh;
   }, [primaryMesh]);
+  useEffect(() => {
+    selectedReferenceRootsRef.current = selectedReferenceRoots;
+  }, [selectedReferenceRoots]);
+  useEffect(() => {
+    primaryReferenceRef.current = primaryReference;
+  }, [primaryReference]);
 
   const captureSnapshots = () => {
     if (pickingBones) {
@@ -90,6 +122,15 @@ export function GizmoController() {
         snapshots.set(name, captureBoneSnapshot(bone));
       }
       boneSnapshots.current = snapshots;
+      return;
+    }
+
+    if (pickingReferences) {
+      const snapshots = new Map<string, ObjectTransformSnapshot>();
+      for (const root of selectedReferenceRootsRef.current) {
+        snapshots.set(root.uuid, captureObjectSnapshot(root));
+      }
+      meshSnapshots.current = snapshots;
       return;
     }
 
@@ -123,6 +164,27 @@ export function GizmoController() {
       if (touched.length > 0) {
         touched.push(primaryBoneObj);
         updateBoneHierarchy(touched);
+      }
+      return;
+    }
+
+    if (pickingReferences) {
+      const primary = primaryReferenceRef.current;
+      if (!primary || selectedReferenceRootsRef.current.length <= 1) return;
+      const primaryStart = meshSnapshots.current.get(primary.uuid);
+      if (!primaryStart) return;
+
+      const touched: import("three").Object3D[] = [];
+      for (const root of selectedReferenceRootsRef.current) {
+        if (root.uuid === primary.uuid) continue;
+        const start = meshSnapshots.current.get(root.uuid);
+        if (!start) continue;
+        applyPrimaryObjectDelta(primary, primaryStart, root, start);
+        touched.push(root);
+      }
+      if (touched.length > 0) {
+        touched.push(primary);
+        updateObjectHierarchy(touched);
       }
       return;
     }
@@ -172,7 +234,13 @@ export function GizmoController() {
 
   return (
     <TransformControls
-      key={pickingBones ? `bone-${primaryName}` : `mesh-${primaryMesh?.uuid ?? "none"}`}
+      key={
+        pickingBones
+          ? `bone-${primaryName}`
+          : pickingReferences
+            ? `ref-${primaryRefId ?? "none"}`
+            : `mesh-${primaryMesh?.uuid ?? "none"}`
+      }
       ref={controlsRef}
       object={gizmoObject}
       mode={mode}

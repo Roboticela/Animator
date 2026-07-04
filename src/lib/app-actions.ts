@@ -6,6 +6,24 @@ import { buildProceduralClip, getProceduralDef, type ProceduralAnimationId } fro
 import { buildClipFromData, captureBoneTransform, clipToCustomData, createEmptyCustomClip, deleteBoneKeyframe, ensureBonePoseEasing, nextClipId, setPoseEasing, setPoseEasingForBones, uniqueClipName, upsertKeyframe } from "@/lib/clip-builder";
 import type { KeyframeEasingId } from "@/lib/keyframe-easing";
 import { copyBoneTransforms, mirrorBonesOnX, pasteBoneTransforms } from "@/lib/bone-clipboard";
+import { modelNeedsExternalTextures } from "@/lib/texture-maps";
+import {
+  buildHtmlTo3dMesh,
+  createModelFromHtmlMesh,
+  type HtmlTo3dSource,
+} from "@/lib/html-to-3d";
+import {
+  buildReferenceFromHtml,
+  buildReferenceFromModelBuffer,
+  createEmptySceneModel,
+} from "@/lib/reference-import";
+import {
+  normalizeImportedMaterials,
+  prepareMaterialsForEnvironment,
+  snapshotMeshMaterials,
+} from "@/lib/model-appearance";
+import { refreshModelStructure } from "@/lib/model-edit";
+import * as THREE from "three";
 
 let clipIdCounter = 0;
 function embeddedClipId() {
@@ -15,7 +33,8 @@ function embeddedClipId() {
 
 /** Loads a parsed model into both stores and seeds the clip library with any embedded clips. */
 export function loadModelIntoApp(data: ModelData) {
-  useModelStore.getState().loadModel(data);
+  const openTexturePrompt = modelNeedsExternalTextures(data.object3D, data.sourceExt);
+  useModelStore.getState().loadModel(data, { openTexturePrompt });
 
   const embeddedMetas: ClipMeta[] = data.embeddedClips.map((clip) => ({
     id: embeddedClipId(),
@@ -26,6 +45,80 @@ export function loadModelIntoApp(data: ModelData) {
   }));
 
   useAnimationStore.getState().resetForNewModel(embeddedMetas);
+}
+
+/** Renders HTML/CSS/JS to a 3D plane and adds it to the scene (or starts a new scene). */
+export async function importHtmlPanelToScene(source: HtmlTo3dSource): Promise<void> {
+  const store = useModelStore.getState();
+  store.setLoading(true, "Converting HTML to 3D…");
+
+  try {
+    const { mesh } = await buildHtmlTo3dMesh(source);
+
+    if (!store.model) {
+      const modelData = createModelFromHtmlMesh(mesh, source.name?.trim() || "HTML Scene");
+      loadModelIntoApp(modelData);
+      return;
+    }
+
+    normalizeImportedMaterials(mesh);
+    store.model.object3D.add(mesh);
+    const planeHeight =
+      mesh.geometry instanceof THREE.PlaneGeometry
+        ? mesh.geometry.parameters.height
+        : source.planeWidth / (source.width / Math.max(source.height, 1));
+    mesh.position.y = planeHeight * 0.5;
+
+    snapshotMeshMaterials(store.model.object3D);
+    prepareMaterialsForEnvironment(store.model.object3D);
+    if (!store.showMaterials) store.setShowMaterials(true);
+
+    const refreshed = refreshModelStructure(store.model);
+    useModelStore.setState({
+      ...refreshed,
+      materialRevision: store.materialRevision + 1,
+      isLoading: false,
+      loadingMessage: null,
+    });
+  } catch (err) {
+    store.setLoading(false);
+    throw err;
+  }
+}
+
+/** Ensures a viewport scene exists so references can be placed without a project model. */
+export function ensureViewportScene() {
+  if (useModelStore.getState().model) return;
+  loadModelIntoApp(createEmptySceneModel());
+}
+
+/** Imports a 3D file as a session-only viewport reference (not saved in the project). */
+export async function importReferenceFromFile(file: File): Promise<void> {
+  ensureViewportScene();
+  const store = useModelStore.getState();
+  store.setLoading(true, `Importing reference ${file.name}…`);
+  try {
+    const buffer = await file.arrayBuffer();
+    const built = await buildReferenceFromModelBuffer(buffer, file.name);
+    store.addReference(built);
+  } catch (err) {
+    store.setLoading(false);
+    throw err;
+  }
+}
+
+/** Renders HTML/CSS/JS as a session-only viewport reference. */
+export async function importHtmlReference(source: HtmlTo3dSource): Promise<void> {
+  ensureViewportScene();
+  const store = useModelStore.getState();
+  store.setLoading(true, "Building HTML reference…");
+  try {
+    const built = await buildReferenceFromHtml(source);
+    store.addReference(built);
+  } catch (err) {
+    store.setLoading(false);
+    throw err;
+  }
 }
 
 /** Restores a .rcanim project without resetting clips to embedded GLB animations. */

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import * as THREE from "three";
 import type { BoneInfo, MeshPartInfo, ModelData } from "@/types/model";
+import type { ReferenceKind, SceneReference } from "@/types/reference";
+import { disposeReferenceRoot, nextReferenceId, tagReferenceHierarchy } from "@/lib/reference-import";
 import { AnimationEngine } from "@/lib/animation-engine";
 import {
   type BonePickModifiers,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/model-edit";
 import {
   applyMaterialPreference,
+  normalizeImportedMaterials,
   prepareMaterialsForEnvironment,
   snapshotMeshMaterials,
 } from "@/lib/model-appearance";
@@ -32,6 +35,16 @@ import {
   clearMaterialPreviewCache,
   findSceneMaterialById,
 } from "@/lib/scene-materials";
+import {
+  assignTextureFileToMaterial,
+  autoLoadTexturesFromFolder,
+  clearMaterialTextureSlot as clearMaterialTextureSlotOnScene,
+  fixMaterialTextureColorSpaces as fixMaterialTextureColorSpacesOnScene,
+  linkTextureBetweenMaterials,
+  repairSceneTextures,
+  type TextureFolderLoadResult,
+  type TextureSlot,
+} from "@/lib/texture-maps";
 import type { MeshEditTool, MeshElementMode, MeshElementSelection } from "@/lib/mesh-edit/types";
 import { emptyMeshElementSelection } from "@/lib/mesh-edit/types";
 import {
@@ -44,7 +57,7 @@ import {
   separateMeshByFaceSelection,
 } from "@/lib/mesh-edit/operations";
 
-export type ViewportSelectionTarget = "bones" | "parts";
+export type ViewportSelectionTarget = "bones" | "parts" | "references";
 
 interface RestTransform {
   position: number[];
@@ -65,12 +78,19 @@ interface ModelState {
   meshSelectionAnchorUuid: string | null;
   hoveredBoneName: string | null;
   hoveredMeshPartId: string | null;
+  hoveredReferenceId: string | null;
+  references: SceneReference[];
+  selectedReferenceIds: string[];
+  referenceSelectionAnchorId: string | null;
   viewportSelectionTarget: ViewportSelectionTarget;
   meshElementMode: MeshElementMode;
   meshEditTool: MeshEditTool;
   meshElementSelection: MeshElementSelection | null;
   meshEditRevision: number;
   materialRevision: number;
+  textureFolderName: string | null;
+  lastTextureFolderLoad: TextureFolderLoadResult | null;
+  textureFolderLoading: boolean;
   knifeCutStart: THREE.Vector3 | null;
   knifePreviewEnd: THREE.Vector3 | null;
   sceneRadius: number;
@@ -95,10 +115,14 @@ interface ModelState {
   isLoading: boolean;
   loadingMessage: string | null;
   loadError: string | null;
+  /** Shown after importing FBX/OBJ/GLTF that needs external texture files. */
+  textureFolderPromptOpen: boolean;
 
   setLoading: (loading: boolean, message?: string | null) => void;
   setLoadError: (error: string | null) => void;
-  loadModel: (data: ModelData) => void;
+  loadModel: (data: ModelData, options?: { openTexturePrompt?: boolean }) => void;
+  closeTextureFolderPrompt: () => void;
+  embedTexturesFromFolder: (files: File[]) => Promise<TextureFolderLoadResult>;
   clearModel: () => void;
   pickBone: (name: string | null, modifiers?: BonePickModifiers) => void;
   /** Replace selection with an explicit list (tree order preserved). */
@@ -111,7 +135,18 @@ interface ModelState {
   clearMeshSelection: () => void;
   setHoveredBone: (name: string | null) => void;
   setHoveredMeshPart: (id: string | null) => void;
+  setHoveredReference: (id: string | null) => void;
   clearViewportHover: () => void;
+  addReference: (payload: {
+    root: THREE.Object3D;
+    name: string;
+    kind: ReferenceKind;
+    sourceName?: string;
+  }) => string;
+  pickReference: (id: string | null, modifiers?: BonePickModifiers) => void;
+  removeSelectedReferences: () => void;
+  toggleSelectedReferenceVisibility: () => void;
+  clearReferences: () => void;
   setViewportSelectionTarget: (target: ViewportSelectionTarget) => void;
   setMeshElementMode: (mode: MeshElementMode) => void;
   setMeshEditTool: (tool: MeshEditTool) => void;
@@ -128,7 +163,13 @@ interface ModelState {
   bumpMaterialRevision: () => void;
   applyColorToSelectedParts: (options: import("@/lib/scene-materials").MaterialPaintOptions) => void;
   applySceneMaterialToSelectedParts: (materialId: string) => void;
-  applyTextureToSelectedParts: (file: File) => Promise<void>;
+  applyTextureToSelectedParts: (file: File, slot?: TextureSlot) => Promise<void>;
+  assignTextureSlotToMaterial: (materialId: string, slot: TextureSlot, file: File) => Promise<void>;
+  linkMaterialTexture: (targetMaterialId: string, sourceMaterialId: string, slot: TextureSlot) => void;
+  clearMaterialTextureSlot: (materialId: string, slot: TextureSlot) => void;
+  fixMaterialTextureColorSpaces: (materialId: string) => void;
+  repairAllTextureColorSpaces: () => void;
+  loadTexturesFromFolder: (files: File[]) => Promise<TextureFolderLoadResult>;
   clearActiveSelection: () => void;
   selectAllActive: () => void;
   toggleSelectedMeshVisibility: () => void;
@@ -214,12 +255,19 @@ export const useModelStore = create<ModelState>((set, get) => ({
   meshSelectionAnchorUuid: null,
   hoveredBoneName: null,
   hoveredMeshPartId: null,
+  hoveredReferenceId: null,
+  references: [],
+  selectedReferenceIds: [],
+  referenceSelectionAnchorId: null,
   viewportSelectionTarget: "bones",
   meshElementMode: "object",
   meshEditTool: "select",
   meshElementSelection: null,
   meshEditRevision: 0,
   materialRevision: 0,
+  textureFolderName: null,
+  lastTextureFolderLoad: null,
+  textureFolderLoading: false,
   knifeCutStart: null,
   knifePreviewEnd: null,
   sceneRadius: 1,
@@ -243,13 +291,16 @@ export const useModelStore = create<ModelState>((set, get) => ({
   isLoading: false,
   loadingMessage: null,
   loadError: null,
+  textureFolderPromptOpen: false,
 
   setLoading: (loading, message = null) => set({ isLoading: loading, loadingMessage: message }),
   setLoadError: (error) => set({ loadError: error }),
 
-  loadModel: (data) => {
+  loadModel: (data, options) => {
     get().engine?.dispose();
     clearMaterialPreviewCache();
+    normalizeImportedMaterials(data.object3D);
+    repairSceneTextures(data.object3D);
     snapshotMeshMaterials(data.object3D);
     prepareMaterialsForEnvironment(data.object3D);
     applyMaterialPreference(data.object3D, get().showMaterials);
@@ -277,18 +328,25 @@ export const useModelStore = create<ModelState>((set, get) => ({
       meshElementSelection: null,
       meshEditRevision: 0,
       materialRevision: 0,
+      textureFolderName: null,
+      lastTextureFolderLoad: null,
+      textureFolderLoading: false,
       knifeCutStart: null,
       knifePreviewEnd: null,
       sceneRadius,
       isLoading: false,
       loadingMessage: null,
       loadError: null,
+      textureFolderPromptOpen: Boolean(options?.openTexturePrompt),
     });
   },
+
+  closeTextureFolderPrompt: () => set({ textureFolderPromptOpen: false }),
 
   clearModel: () => {
     get().engine?.dispose();
     clearMaterialPreviewCache();
+    for (const ref of get().references) disposeReferenceRoot(ref.root);
     set({
       model: null,
       engine: null,
@@ -301,16 +359,24 @@ export const useModelStore = create<ModelState>((set, get) => ({
       meshSelectionAnchorUuid: null,
       hoveredBoneName: null,
       hoveredMeshPartId: null,
+      hoveredReferenceId: null,
+      references: [],
+      selectedReferenceIds: [],
+      referenceSelectionAnchorId: null,
       viewportSelectionTarget: "bones",
       meshElementMode: "object",
       meshEditTool: "select",
       meshElementSelection: null,
       meshEditRevision: 0,
       materialRevision: 0,
+      textureFolderName: null,
+      lastTextureFolderLoad: null,
+      textureFolderLoading: false,
       knifeCutStart: null,
       knifePreviewEnd: null,
       isLoading: false,
       loadingMessage: null,
+      textureFolderPromptOpen: false,
     });
   },
 
@@ -410,9 +476,97 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   clearMeshSelection: () => set({ selectedMeshUuids: [], meshSelectionAnchorUuid: null }),
 
-  setHoveredBone: (name) => set({ hoveredBoneName: name, hoveredMeshPartId: null }),
-  setHoveredMeshPart: (id) => set({ hoveredMeshPartId: id, hoveredBoneName: null }),
-  clearViewportHover: () => set({ hoveredBoneName: null, hoveredMeshPartId: null }),
+  setHoveredBone: (name) => set({ hoveredBoneName: name, hoveredMeshPartId: null, hoveredReferenceId: null }),
+  setHoveredMeshPart: (id) => set({ hoveredMeshPartId: id, hoveredBoneName: null, hoveredReferenceId: null }),
+  setHoveredReference: (id) => set({ hoveredReferenceId: id, hoveredBoneName: null, hoveredMeshPartId: null }),
+  clearViewportHover: () => set({ hoveredBoneName: null, hoveredMeshPartId: null, hoveredReferenceId: null }),
+
+  addReference: (payload) => {
+    const id = nextReferenceId();
+    tagReferenceHierarchy(payload.root, id);
+    const entry: SceneReference = {
+      id,
+      name: payload.name,
+      kind: payload.kind,
+      root: payload.root,
+      visible: true,
+      sourceName: payload.sourceName,
+    };
+    set((state) => ({
+      references: [...state.references, entry],
+      selectedReferenceIds: [id],
+      referenceSelectionAnchorId: id,
+      viewportSelectionTarget: "references",
+      isLoading: false,
+      loadingMessage: null,
+    }));
+    return id;
+  },
+
+  pickReference: (id, modifiers) => {
+    if (id === null) {
+      set({ selectedReferenceIds: [], referenceSelectionAnchorId: null });
+      return;
+    }
+
+    const { references, selectedReferenceIds, referenceSelectionAnchorId } = get();
+    const ordered = references.map((ref) => ref.id);
+    if (!ordered.includes(id)) return;
+
+    const { selected, anchor } = resolvePickSelection(
+      ordered,
+      selectedReferenceIds,
+      referenceSelectionAnchorId ?? getPrimaryReferenceId(selectedReferenceIds),
+      id,
+      modifiers ?? {}
+    );
+
+    set({
+      selectedReferenceIds: selected,
+      referenceSelectionAnchorId: anchor,
+      viewportSelectionTarget: "references",
+    });
+  },
+
+  removeSelectedReferences: () => {
+    const { references, selectedReferenceIds } = get();
+    if (selectedReferenceIds.length === 0) return;
+    const removeSet = new Set(selectedReferenceIds);
+    for (const ref of references) {
+      if (removeSet.has(ref.id)) disposeReferenceRoot(ref.root);
+    }
+    set({
+      references: references.filter((ref) => !removeSet.has(ref.id)),
+      selectedReferenceIds: [],
+      referenceSelectionAnchorId: null,
+      hoveredReferenceId: null,
+    });
+  },
+
+  toggleSelectedReferenceVisibility: () => {
+    const { references, selectedReferenceIds } = get();
+    if (selectedReferenceIds.length === 0) return;
+    const selected = references.filter((ref) => selectedReferenceIds.includes(ref.id));
+    const anyVisible = selected.some((ref) => ref.visible);
+    const nextVisible = !anyVisible;
+    set({
+      references: references.map((ref) => {
+        if (!selectedReferenceIds.includes(ref.id)) return ref;
+        ref.root.visible = nextVisible;
+        return { ...ref, visible: nextVisible };
+      }),
+    });
+  },
+
+  clearReferences: () => {
+    for (const ref of get().references) disposeReferenceRoot(ref.root);
+    set({
+      references: [],
+      selectedReferenceIds: [],
+      referenceSelectionAnchorId: null,
+      hoveredReferenceId: null,
+    });
+  },
 
   setViewportSelectionTarget: (target) =>
     set({
@@ -584,14 +738,100 @@ export const useModelStore = create<ModelState>((set, get) => ({
     get().bumpMaterialRevision();
   },
 
-  applyTextureToSelectedParts: async (file) => {
+  applyTextureToSelectedParts: async (file, slot = "map") => {
     const { model, meshParts, selectedMeshUuids, showMaterials } = get();
     if (!model) return;
     const parts = meshParts.filter((p) => selectedMeshUuids.includes(p.id));
     if (parts.length === 0) return;
     if (!showMaterials) get().setShowMaterials(true);
-    await applyTextureMapToParts(parts, file);
+    await applyTextureMapToParts(parts, file, slot);
     get().bumpMaterialRevision();
+  },
+
+  assignTextureSlotToMaterial: async (materialId, slot, file) => {
+    const { model, showMaterials } = get();
+    if (!model) return;
+    if (!showMaterials) get().setShowMaterials(true);
+    await assignTextureFileToMaterial(model.object3D, materialId, slot, file);
+    get().bumpMaterialRevision();
+  },
+
+  linkMaterialTexture: (targetMaterialId, sourceMaterialId, slot) => {
+    const { model, showMaterials } = get();
+    if (!model) return;
+    if (!showMaterials) get().setShowMaterials(true);
+    linkTextureBetweenMaterials(model.object3D, targetMaterialId, sourceMaterialId, slot);
+    get().bumpMaterialRevision();
+  },
+
+  clearMaterialTextureSlot: (materialId, slot) => {
+    const { model } = get();
+    if (!model) return;
+    clearMaterialTextureSlotOnScene(model.object3D, materialId, slot);
+    get().bumpMaterialRevision();
+  },
+
+  fixMaterialTextureColorSpaces: (materialId) => {
+    const { model } = get();
+    if (!model) return;
+    fixMaterialTextureColorSpacesOnScene(model.object3D, materialId);
+    get().bumpMaterialRevision();
+  },
+
+  repairAllTextureColorSpaces: () => {
+    const { model } = get();
+    if (!model) return;
+    repairSceneTextures(model.object3D);
+    get().bumpMaterialRevision();
+  },
+
+  loadTexturesFromFolder: async (files) => {
+    const { model, showMaterials } = get();
+    const empty: TextureFolderLoadResult = {
+      folderName: null,
+      fileCount: 0,
+      matched: 0,
+      skipped: 0,
+      failed: 0,
+      unmatched: [],
+    };
+    if (!model || files.length === 0) return empty;
+    if (!showMaterials) get().setShowMaterials(true);
+    set({ textureFolderLoading: true });
+    get().setLoading(true, "Scanning texture folder…");
+    try {
+      const result = await autoLoadTexturesFromFolder(model.object3D, files, (message) => {
+        get().setLoading(true, message);
+      });
+      if (result.matched > 0) {
+        set((state) => ({
+          model: state.model
+            ? {
+                ...state.model,
+                texturesEmbedded: true,
+                sourceBuffer: undefined,
+              }
+            : null,
+        }));
+      }
+      set({
+        textureFolderName: result.folderName,
+        lastTextureFolderLoad: result,
+      });
+      get().bumpMaterialRevision();
+      return result;
+    } finally {
+      set({ textureFolderLoading: false });
+      get().setLoading(false);
+    }
+  },
+
+  embedTexturesFromFolder: async (files) => {
+    const result = await get().loadTexturesFromFolder(files);
+    if (result.matched > 0) {
+      set({ textureFolderPromptOpen: false });
+    }
+    return result;
   },
 
   clearActiveSelection: () => {
@@ -604,15 +844,23 @@ export const useModelStore = create<ModelState>((set, get) => ({
         knifeCutStart: null,
         knifePreviewEnd: null,
       });
+    } else if (viewportSelectionTarget === "references") {
+      set({ selectedReferenceIds: [], referenceSelectionAnchorId: null });
     } else {
       set({ selectedBoneNames: [], selectionAnchorName: null });
     }
   },
 
   selectAllActive: () => {
-    const { viewportSelectionTarget } = get();
+    const { viewportSelectionTarget, references } = get();
     if (viewportSelectionTarget === "parts") get().selectAllMeshParts();
-    else get().selectAllBones();
+    else if (viewportSelectionTarget === "references") {
+      const ids = references.map((ref) => ref.id);
+      set({
+        selectedReferenceIds: ids,
+        referenceSelectionAnchorId: ids[ids.length - 1] ?? null,
+      });
+    } else get().selectAllBones();
   },
 
   toggleSelectedMeshVisibility: () => {
@@ -730,6 +978,11 @@ export function getPrimaryMeshPartId(ids: string[]): string | null {
   return ids.length > 0 ? ids[ids.length - 1]! : null;
 }
 
+/** Last selected reference — gizmo anchor. */
+export function getPrimaryReferenceId(ids: string[]): string | null {
+  return ids.length > 0 ? ids[ids.length - 1]! : null;
+}
+
 /** Last selected bone — gizmo anchor and transform panel reference. */
 export function getPrimaryBoneName(names: string[]): string | null {
   return names.length > 0 ? names[names.length - 1]! : null;
@@ -780,4 +1033,27 @@ export function pickMeshPartFromClick(
   }
 
   pickMeshPart(id);
+}
+
+export function pickReferenceFromClick(
+  pickReference: ModelState["pickReference"],
+  id: string,
+  selectedReferenceIds: string[],
+  e: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }
+) {
+  const additive = Boolean(e.ctrlKey || e.metaKey);
+  const range = Boolean(e.shiftKey);
+  const isSelected = selectedReferenceIds.includes(id);
+
+  if (range || additive) {
+    pickReference(id, { additive, range });
+    return;
+  }
+
+  if (isSelected && selectedReferenceIds.length === 1) {
+    pickReference(null);
+    return;
+  }
+
+  pickReference(id);
 }

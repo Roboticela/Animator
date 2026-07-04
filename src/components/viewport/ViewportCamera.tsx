@@ -90,7 +90,16 @@ export function ViewportCamera() {
   }, [model, frameCameraTick, camera]);
 
   useEffect(() => {
-    const { selectedBoneNames, boneMap } = useModelStore.getState();
+    const { selectedBoneNames, selectedReferenceIds, references, boneMap } = useModelStore.getState();
+    if (selectedReferenceIds.length > 0 && useModelStore.getState().viewportSelectionTarget === "references") {
+      const box = new THREE.Box3();
+      for (const id of selectedReferenceIds) {
+        const ref = references.find((r) => r.id === id);
+        if (ref?.root) box.expandByObject(ref.root);
+      }
+      if (!box.isEmpty()) frameBoxOnCamera(box, camera, controlsRef.current, 2);
+      return;
+    }
     if (selectedBoneNames.length === 0) return;
     frameBones(selectedBoneNames, boneMap, camera, controlsRef.current);
   }, [frameSelectionTick, camera]);

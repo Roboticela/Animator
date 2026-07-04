@@ -1,20 +1,28 @@
 import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Bone, Box, ChevronDown, ChevronRight, Eye, EyeOff, Folder, Layers3, Search, Trash2, X } from "lucide-react";
+import { Bone, Box, ChevronDown, ChevronRight, Code2, Eye, EyeOff, FileUp, Folder, Image, Layers3, Search, Trash2, X } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { getBoneIcon } from "@/lib/bone-icons";
 import { isSelectableMeshPart } from "@/lib/mesh-utils";
 import type { MeshPartInfo } from "@/types/model";
-import { pickBoneFromClick, pickMeshPartFromClick, useModelStore } from "@/store/modelStore";
+import { pickBoneFromClick, pickMeshPartFromClick, pickReferenceFromClick, useModelStore } from "@/store/modelStore";
+import type { SceneReference } from "@/types/reference";
+import { Button } from "@/components/ui/Button";
 import { useAnimationStore } from "@/store/animationStore";
 import { boneHasKeyframes } from "@/lib/clip-builder";
 
-type ExplorerTab = "armatures" | "mesh";
+type ExplorerTab = "armatures" | "mesh" | "references";
 
-const EXPLORER_TABS: { id: ExplorerTab; label: string; icon: LucideIcon; target: "bones" | "parts" }[] = [
+const EXPLORER_TABS: {
+  id: ExplorerTab;
+  label: string;
+  icon: LucideIcon;
+  target: "bones" | "parts" | "references";
+}[] = [
   { id: "armatures", label: "Armatures", icon: Bone, target: "bones" },
   { id: "mesh", label: "Mesh", icon: Box, target: "parts" },
+  { id: "references", label: "References", icon: Image, target: "references" },
 ];
 
 function Row({
@@ -181,38 +189,69 @@ function PartTree({
   );
 }
 
-export function ModelHierarchyPanel() {
+export function ModelHierarchyPanel({
+  onImportReference3d,
+  onImportReferenceHtml,
+}: {
+  onImportReference3d?: () => void;
+  onImportReferenceHtml?: () => void;
+} = {}) {
   const model = useModelStore((s) => s.model);
+  const references = useModelStore((s) => s.references);
   const meshParts = useModelStore((s) => s.meshParts);
   const selectedBoneNames = useModelStore((s) => s.selectedBoneNames);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
+  const selectedReferenceIds = useModelStore((s) => s.selectedReferenceIds);
   const pickBone = useModelStore((s) => s.pickBone);
   const pickMeshPart = useModelStore((s) => s.pickMeshPart);
+  const pickReference = useModelStore((s) => s.pickReference);
   const hoveredBoneName = useModelStore((s) => s.hoveredBoneName);
   const hoveredMeshPartId = useModelStore((s) => s.hoveredMeshPartId);
+  const hoveredReferenceId = useModelStore((s) => s.hoveredReferenceId);
   const setHoveredBone = useModelStore((s) => s.setHoveredBone);
   const setHoveredMeshPart = useModelStore((s) => s.setHoveredMeshPart);
+  const setHoveredReference = useModelStore((s) => s.setHoveredReference);
   const clearViewportHover = useModelStore((s) => s.clearViewportHover);
   const removeSelectedBones = useModelStore((s) => s.removeSelectedBones);
   const removeSelectedMeshParts = useModelStore((s) => s.removeSelectedMeshParts);
+  const removeSelectedReferences = useModelStore((s) => s.removeSelectedReferences);
   const toggleSelectedMeshVisibility = useModelStore((s) => s.toggleSelectedMeshVisibility);
+  const toggleSelectedReferenceVisibility = useModelStore((s) => s.toggleSelectedReferenceVisibility);
   const viewportSelectionTarget = useModelStore((s) => s.viewportSelectionTarget);
   const setViewportSelectionTarget = useModelStore((s) => s.setViewportSelectionTarget);
   const activeClip = useAnimationStore((s) => s.clips.find((c) => c.id === s.activeClipId));
 
-  const tab: ExplorerTab = viewportSelectionTarget === "bones" ? "armatures" : "mesh";
+  const tab: ExplorerTab =
+    viewportSelectionTarget === "bones"
+      ? "armatures"
+      : viewportSelectionTarget === "references"
+        ? "references"
+        : "mesh";
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const selectedBoneSet = useMemo(() => new Set(selectedBoneNames), [selectedBoneNames]);
   const selectedMeshSet = useMemo(() => new Set(selectedMeshUuids), [selectedMeshUuids]);
+  const selectedReferenceSet = useMemo(() => new Set(selectedReferenceIds), [selectedReferenceIds]);
   const groups = useMemo(() => model?.skeletonGroups ?? [], [model]);
   const visibleMeshParts = useMemo(() => filterPartTree(meshParts, query), [meshParts, query]);
   const selectablePartCount = useMemo(() => meshParts.filter(isSelectableMeshPart).length, [meshParts]);
+  const visibleReferences = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return references;
+    return references.filter(
+      (ref) => ref.name.toLowerCase().includes(q) || ref.sourceName?.toLowerCase().includes(q)
+    );
+  }, [references, query]);
 
-  if (!model) return null;
+  if (!model && references.length === 0) return null;
 
-  const selectionCount = tab === "armatures" ? selectedBoneNames.length : selectedMeshUuids.length;
+  const selectionCount =
+    tab === "armatures"
+      ? selectedBoneNames.length
+      : tab === "references"
+        ? selectedReferenceIds.length
+        : selectedMeshUuids.length;
 
   const toggleGroup = (id: string) => {
     setCollapsed((prev) => {
@@ -225,7 +264,13 @@ export function ModelHierarchyPanel() {
 
   const onDelete = () => {
     if (tab === "armatures") removeSelectedBones();
+    else if (tab === "references") removeSelectedReferences();
     else removeSelectedMeshParts();
+  };
+
+  const referenceIcon = (ref: SceneReference) => {
+    if (!ref.visible) return EyeOff;
+    return ref.kind === "html" ? Code2 : Box;
   };
 
   return (
@@ -267,12 +312,12 @@ export function ModelHierarchyPanel() {
               </button>
             )}
           </div>
-          {tab === "mesh" && (
+          {(tab === "mesh" || tab === "references") && (
             <button
               type="button"
               title="Toggle visibility"
               disabled={selectionCount === 0}
-              onClick={toggleSelectedMeshVisibility}
+              onClick={tab === "references" ? toggleSelectedReferenceVisibility : toggleSelectedMeshVisibility}
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border text-foreground-muted transition-colors hover:bg-accent disabled:opacity-40"
             >
               <Eye className="h-3.5 w-3.5" />
@@ -288,6 +333,23 @@ export function ModelHierarchyPanel() {
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
+
+        {tab === "references" && (onImportReference3d || onImportReferenceHtml) && (
+          <div className="flex flex-wrap gap-1">
+            {onImportReference3d && (
+              <Button type="button" size="xs" variant="outline" className="flex-1 gap-1" onClick={onImportReference3d}>
+                <FileUp className="h-3 w-3" />
+                3D reference
+              </Button>
+            )}
+            {onImportReferenceHtml && (
+              <Button type="button" size="xs" variant="outline" className="flex-1 gap-1" onClick={onImportReferenceHtml}>
+                <Code2 className="h-3 w-3" />
+                HTML reference
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div
@@ -357,6 +419,32 @@ export function ModelHierarchyPanel() {
               setHoveredMeshPart={setHoveredMeshPart}
               clearViewportHover={clearViewportHover}
             />
+          </>
+        )}
+
+        {tab === "references" && (
+          <>
+            {visibleReferences.length === 0 && (
+              <p className="px-2 py-4 text-center text-xs text-foreground-muted">
+                No references yet. Import a 3D model or HTML panel — references stay in the viewport only and are not saved with the project.
+              </p>
+            )}
+            {visibleReferences.map((ref) => (
+              <Row
+                key={ref.id}
+                depth={0}
+                icon={referenceIcon(ref)}
+                label={ref.name}
+                selected={selectedReferenceSet.has(ref.id)}
+                hovered={hoveredReferenceId === ref.id}
+                dimmed={!ref.visible}
+                onMouseEnter={() => setHoveredReference(ref.id)}
+                onMouseLeave={() => {
+                  if (useModelStore.getState().hoveredReferenceId === ref.id) clearViewportHover();
+                }}
+                onClick={(e) => pickReferenceFromClick(pickReference, ref.id, selectedReferenceIds, e)}
+              />
+            ))}
           </>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, ImagePlus, Paintbrush, Shapes } from "lucide-react";
+import { AlertTriangle, Box, CircleAlert, ImagePlus, Paintbrush, Shapes } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import {
   type SceneMaterialSwatch,
 } from "@/lib/scene-materials";
 import { isSelectableMeshPart } from "@/lib/mesh-utils";
+import { TextureMapsSection } from "@/components/panels/TextureMapsSection";
 
 function isValidHex(color: string): boolean {
   return /^#[0-9A-Fa-f]{6}$/.test(color);
@@ -65,6 +66,23 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/45">{children}</p>;
 }
 
+function MaterialIssueBadge({ swatch }: { swatch: SceneMaterialSwatch }) {
+  const hasError = swatch.issues.some((i) => i.severity === "error");
+  const hasWarning = swatch.issues.some((i) => i.severity === "warning");
+  if (!hasError && !hasWarning) return null;
+  return (
+    <span
+      className={cn(
+        "absolute right-0.5 top-0.5 rounded-full p-0.5",
+        hasError ? "bg-red-500/90 text-white" : "bg-amber-500/90 text-black"
+      )}
+      title={swatch.issues.map((i) => i.message).join("\n")}
+    >
+      {hasError ? <CircleAlert className="h-2.5 w-2.5" /> : <AlertTriangle className="h-2.5 w-2.5" />}
+    </span>
+  );
+}
+
 export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
   const model = useModelStore((s) => s.model);
   const meshParts = useModelStore((s) => s.meshParts);
@@ -78,6 +96,7 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
   const applyTextureToSelectedParts = useModelStore((s) => s.applyTextureToSelectedParts);
 
   const textureInputRef = useRef<HTMLInputElement>(null);
+  const skipNextApplyRef = useRef(false);
   const [color, setColor] = useState("#9099a6");
   const [roughness, setRoughness] = useState(0.72);
   const [metalness, setMetalness] = useState(0.08);
@@ -92,7 +111,7 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
 
   const sceneMaterials = useMemo(() => {
     if (!model) return [] as SceneMaterialSwatch[];
-    return collectSceneMaterials(model.object3D);
+    return collectSceneMaterials(model.object3D, model.sourceExt);
   }, [model, materialRevision]);
 
   const selectedPartIds = useMemo(
@@ -103,6 +122,7 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
   useEffect(() => {
     const current = readPartMaterialColor(selectedParts);
     if (!current) return;
+    skipNextApplyRef.current = true;
     setColor(current.color);
     setRoughness(current.roughness ?? 0.72);
     setMetalness(current.metalness ?? 0.08);
@@ -112,6 +132,10 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
   }, [selectedPartIds, selectedParts]);
 
   useEffect(() => {
+    if (skipNextApplyRef.current) {
+      skipNextApplyRef.current = false;
+      return;
+    }
     if (selectedParts.length === 0 || !isValidHex(color)) return;
     const timer = window.setTimeout(() => {
       applyColorToSelectedParts({ color, roughness, metalness, colorOpacity, materialOpacity });
@@ -165,25 +189,29 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
       <p className="text-sm font-medium text-foreground">No model loaded</p>
       <p className="text-xs text-foreground-muted">Open a model to paint mesh colors and materials.</p>
     </div>
-  ) : selectedParts.length === 0 ? (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 bg-background-subtle/40 px-4 py-10 text-center">
-      <Box className="h-8 w-8 text-foreground/30" />
-      <p className="text-sm font-medium text-foreground">Select mesh parts</p>
-      <p className="text-xs leading-relaxed text-foreground-muted">
-        Pick one or more parts in the Explorer Mesh tab or viewport, then assign a color or material here.
-      </p>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={() => setViewportSelectionTarget("parts")}
-      >
-        <Shapes className="h-4 w-4" />
-        Switch to mesh selection
-      </Button>
-    </div>
   ) : (
     <div className="space-y-4">
+      <TextureMapsSection selectedParts={selectedParts} sceneMaterials={sceneMaterials} />
+
+      {selectedParts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 bg-background-subtle/40 px-4 py-10 text-center">
+          <Box className="h-8 w-8 text-foreground/30" />
+          <p className="text-sm font-medium text-foreground">Select mesh parts</p>
+          <p className="text-xs leading-relaxed text-foreground-muted">
+            Pick one or more parts in the Explorer Mesh tab or viewport to paint colors and assign textures.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setViewportSelectionTarget("parts")}
+          >
+            <Shapes className="h-4 w-4" />
+            Switch to mesh selection
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
       {!showMaterials && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
           Materials are hidden. Enable them to see your colors in the viewport.
@@ -368,19 +396,26 @@ export function TexturesPanel({ embedded }: { embedded?: boolean } = {}) {
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {sceneMaterials.map((swatch) => (
-              <div key={swatch.id} className="space-y-1 rounded-lg border border-border/60 p-1.5">
+              <div key={swatch.id} className="relative space-y-1 rounded-lg border border-border/60 p-1.5">
                 <SwatchButton
                   swatch={swatch}
                   active={activeMaterialId === swatch.id}
                   onClick={() => applyMaterial(swatch)}
-                  title={swatch.name}
+                  title={
+                    swatch.issues.length > 0
+                      ? `${swatch.name}\n${swatch.issues.map((i) => i.message).join("\n")}`
+                      : swatch.name
+                  }
                 />
+                <MaterialIssueBadge swatch={swatch} />
                 <span className="block truncate text-[10px] text-foreground-muted">{swatch.name}</span>
               </div>
             ))}
           </div>
         )}
       </div>
+        </div>
+      )}
     </div>
   );
 

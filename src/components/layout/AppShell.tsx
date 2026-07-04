@@ -7,6 +7,8 @@ import { StatusBar } from "@/components/layout/StatusBar";
 import { ResizeHandle } from "@/components/layout/ResizeHandle";
 import { useAnimationStore } from "@/store/animationStore";
 import { useModelStore } from "@/store/modelStore";
+import { useImportReference } from "@/hooks/useImportReference";
+import { HtmlTo3dModal } from "@/components/modals/HtmlTo3dModal";
 import {
   copySelectedBoneTransforms,
   deleteKeyframesAtPlayheadForSelection,
@@ -38,8 +40,10 @@ export function AppShell() {
   const clearActiveSelection = useModelStore((s) => s.clearActiveSelection);
   const undo = useAnimationStore((s) => s.undo);
   const redo = useAnimationStore((s) => s.redo);
+  const { openReferenceFile } = useImportReference();
 
   const [layout, setLayout] = useState<LayoutPreferences>(() => loadLayoutPreferences());
+  const [htmlReferenceOpen, setHtmlReferenceOpen] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
 
   const patchLayout = useCallback(
@@ -205,7 +209,10 @@ export function AppShell() {
           className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden"
           style={{ width: layout.leftWidth }}
         >
-          <ModelHierarchyPanel />
+          <ModelHierarchyPanel
+            onImportReference3d={() => void openReferenceFile()}
+            onImportReferenceHtml={() => setHtmlReferenceOpen(true)}
+          />
         </aside>
 
         <ResizeHandle
@@ -248,6 +255,12 @@ export function AppShell() {
         </div>
         <StatusBar />
       </div>
+
+      <HtmlTo3dModal
+        isOpen={htmlReferenceOpen}
+        onClose={() => setHtmlReferenceOpen(false)}
+        mode="reference"
+      />
     </div>
   );
 }
