@@ -4,7 +4,7 @@
 
 # Animator — 3D Model Animation Studio
 
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="AGPL-3.0 License" /></a>
 <a href="https://tauri.app/"><img src="https://img.shields.io/badge/Tauri-2.x-blue.svg" alt="Tauri" /></a>
 <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-19-blue.svg" alt="React" /></a>
 <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript" /></a>
@@ -52,7 +52,7 @@ The application runs as a native desktop application through **Tauri 2** on Linu
 
 ### Why Animator?
 
-- ✅ **Free and Open Source** — Licensed under MIT
+- ✅ **Free and Open Source** — Licensed under AGPL-3.0
 - ✅ **Cross-Platform** — Works on Linux, Windows, and macOS, plus in any modern browser
 - ✅ **Fast & Lightweight** — Built with Rust and Tauri for excellent native performance
 - ✅ **Multiple Format Support** — Import GLB, GLTF, FBX, and OBJ models
@@ -593,10 +593,10 @@ When reporting a bug, please include your operating system, application version,
 ### FAQ
 
 **Q: Is this application free to use?**
-A: Yes. It is completely free and open-source under the MIT license.
+A: Yes. It is completely free and open-source under the AGPL-3.0 license.
 
 **Q: Can I use this for commercial purposes?**
-A: Yes. The MIT license permits commercial use without restriction.
+A: Yes, but you must comply with the AGPL-3.0 license terms. Any modifications used over a network must be made available to users under the same license.
 
 **Q: Does my data get sent to any servers?**
 A: No. All model data, animations, and textures stay entirely on your device. The application works fully offline.
@@ -620,7 +620,9 @@ A: Yes. Add entries to the clips registry in `src/lib/rcanim.ts`. See the [Confi
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for the full text.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](LICENSE) for the full text.
+
+If you modify this software and make it available over a network (e.g. as a web service), you must provide access to the complete corresponding source code under the same license.
 
 ---
 
