@@ -137,7 +137,7 @@ export function AppShell() {
       } else if (e.key === "g" || e.key === "G") {
         useModelStore.getState().toggleGrid();
       } else if (e.key === "l" || e.key === "L") {
-        useModelStore.getState().toggleLights();
+        useModelStore.getState().cycleLightingMode();
       } else if (e.key === "h" || e.key === "H") {
         useModelStore.getState().toggleShadows();
       } else if (e.key === "o" || e.key === "O") {

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const SAVED_MATERIALS_KEY = "_animatorSavedMaterials";
+export const SAVED_MATERIALS_KEY = "_animatorSavedMaterials";
 const FLAT_PROXY_KEY = "_animatorFlatMaterials";
 
 function createFlatMaterial(): THREE.MeshStandardMaterial {
@@ -12,12 +12,39 @@ function disposeMaterials(materials: THREE.Material | THREE.Material[]) {
   for (const material of list) material.dispose();
 }
 
+/** Persist edited materials so flat ↔ original toggles keep user assignments. */
+export function commitMeshMaterials(mesh: THREE.Mesh, materials: THREE.Material | THREE.Material[]): void {
+  mesh.material = materials;
+  mesh.userData[SAVED_MATERIALS_KEY] = materials;
+  const flat = mesh.userData[FLAT_PROXY_KEY] as THREE.Material | THREE.Material[] | undefined;
+  if (flat) {
+    disposeMaterials(flat);
+    delete mesh.userData[FLAT_PROXY_KEY];
+  }
+}
+
 /** Remember each mesh's imported materials so we can toggle flat ↔ original. */
 export function snapshotMeshMaterials(root: THREE.Object3D): void {
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh || SAVED_MATERIALS_KEY in mesh.userData) return;
     mesh.userData[SAVED_MATERIALS_KEY] = mesh.material;
+  });
+}
+
+/** Tune imported PBR materials for HDR environment reflections. */
+export function prepareMaterialsForEnvironment(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+      material.envMapIntensity = 1;
+      material.roughness = Math.min(Math.max(material.roughness ?? 0.5, 0.04), 1);
+      material.metalness = Math.min(Math.max(material.metalness ?? 0, 0), 1);
+      material.needsUpdate = true;
+    }
   });
 }
 

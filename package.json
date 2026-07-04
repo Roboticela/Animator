@@ -53,6 +53,7 @@
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.23.0",
     "react": "^19.1.0",
+    "react-colorful": "^5.7.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.1",
     "tailwind-merge": "^3.6.0",

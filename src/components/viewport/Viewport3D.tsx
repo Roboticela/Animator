@@ -8,6 +8,7 @@ import { GizmoController } from "@/components/viewport/GizmoController";
 import { ViewportToolbar } from "@/components/viewport/ViewportToolbar";
 import { ViewportBottomToolbar } from "@/components/viewport/ViewportBottomToolbar";
 import { SceneLighting } from "@/components/viewport/SceneLighting";
+import { ViewportRendererSetup } from "@/components/viewport/ViewportRendererSetup";
 import { ViewportCamera } from "@/components/viewport/ViewportCamera";
 import { AnimationDriver } from "@/components/viewport/AnimationDriver";
 import { MeshEditOverlayLayer } from "@/components/viewport/MeshEditOverlayLayer";
@@ -31,6 +32,7 @@ function SceneContent() {
   return (
     <>
       <color attach="background" args={[background]} />
+      <ViewportRendererSetup />
       <SceneLighting />
 
       {showGrid && (
@@ -74,7 +76,12 @@ export function Viewport3D() {
       id="animator-viewport"
       className="relative h-full w-full overflow-hidden rounded-xl border border-border bg-background"
     >
-      <Canvas shadows={showShadows} camera={{ position: [2.5, 1.8, 3], fov: 45, near: 0.01, far: 1000 }} dpr={[1, 1.5]}>
+      <Canvas
+        shadows={showShadows}
+        camera={{ position: [2.5, 1.8, 3], fov: 45, near: 0.01, far: 1000 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: true, alpha: false }}
+      >
         <Suspense fallback={null}>
           <SceneContent />
         </Suspense>

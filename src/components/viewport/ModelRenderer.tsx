@@ -12,6 +12,7 @@ export function ModelRenderer() {
   const showShadows = useModelStore((s) => s.showShadows);
   const showMesh = useModelStore((s) => s.showMesh);
   const showMaterials = useModelStore((s) => s.showMaterials);
+  const materialRevision = useModelStore((s) => s.materialRevision);
   const flatShading = useModelStore((s) => s.flatShading);
   const doubleSided = useModelStore((s) => s.doubleSided);
   const selectedMeshUuids = useModelStore((s) => s.selectedMeshUuids);
@@ -90,7 +91,7 @@ export function ModelRenderer() {
         material.needsUpdate = true;
       });
     });
-  }, [model, wireframe, showShadows, showMesh, showMaterials, flatShading, doubleSided, selectedParts, hoveredPart]);
+  }, [model, wireframe, showShadows, showMesh, showMaterials, materialRevision, flatShading, doubleSided, selectedParts, hoveredPart]);
 
   if (!model) return null;
 

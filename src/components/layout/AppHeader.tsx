@@ -249,10 +249,10 @@ export function AppHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap">
+              <Button variant="outline" size="sm" className="group gap-2 whitespace-nowrap">
                 <Palette className="h-4 w-4" />
                 <span className="hidden md:inline">{currentTheme?.label}</span>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -268,9 +268,10 @@ export function AppHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap">
+              <Button variant="outline" size="sm" className="group gap-2 whitespace-nowrap">
                 <Menu className="h-4 w-4" />
                 <span className="hidden sm:inline">Menu</span>
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">

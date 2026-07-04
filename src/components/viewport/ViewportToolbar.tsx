@@ -5,6 +5,7 @@ import {
   ArrowLeftRight,
   Axis3d,
   Bone,
+  Check,
   Contrast,
   Cuboid,
   Focus,
@@ -17,12 +18,23 @@ import {
   RotateCw,
   Save,
   Scale3d,
+  Sun,
   Waypoints,
+  ChevronDown,
 } from "lucide-react";
 import { FeedbackButton } from "@/components/ui/FeedbackButton";
+import { Button } from "@/components/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useModelStore } from "@/store/modelStore";
 import { useAnimationStore, type TransformMode } from "@/store/animationStore";
+import { HDR_ENVIRONMENT_OPTIONS, lightingModeLabel } from "@/lib/viewport-lighting";
 
 const MODES: { mode: TransformMode; icon: typeof Move; label: string }[] = [
   { mode: "translate", icon: Move, label: "Move (W)" },
@@ -44,8 +56,10 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
   const toggleSkeleton = useModelStore((s) => s.toggleSkeleton);
   const showGrid = useModelStore((s) => s.showGrid);
   const toggleGrid = useModelStore((s) => s.toggleGrid);
-  const showLights = useModelStore((s) => s.showLights);
-  const toggleLights = useModelStore((s) => s.toggleLights);
+  const lightingMode = useModelStore((s) => s.lightingMode);
+  const hdrEnvironment = useModelStore((s) => s.hdrEnvironment);
+  const setLightingMode = useModelStore((s) => s.setLightingMode);
+  const setHdrEnvironment = useModelStore((s) => s.setHdrEnvironment);
   const showShadows = useModelStore((s) => s.showShadows);
   const toggleShadows = useModelStore((s) => s.toggleShadows);
   const showAxes = useModelStore((s) => s.showAxes);
@@ -93,14 +107,54 @@ export function ViewportToolbar({ viewportRoot: _viewportRoot }: { viewportRoot:
           "pointer-events-auto flex max-w-[min(100%,52rem)] flex-wrap items-center justify-end gap-1 rounded-xl border border-border bg-card/80 p-1 backdrop-blur-sm"
         )}
       >
-        <FeedbackButton
-          variant={showLights ? "default" : "ghost"}
-          size="icon"
-          title={showLights ? "Studio lighting on (L)" : "Flat lighting (L)"}
-          onPress={() => toggleLights()}
-        >
-          {showLights ? <Lightbulb className="h-4 w-4" /> : <LightbulbOff className="h-4 w-4" />}
-        </FeedbackButton>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={lightingMode !== "flat" ? "default" : "ghost"}
+              size="sm"
+              className="group h-10 gap-0.5 px-2"
+              title={`Lighting: ${lightingModeLabel(lightingMode)} (L to cycle)`}
+            >
+              {lightingMode === "hdr" ? (
+                <Sun className="h-4 w-4" />
+              ) : lightingMode === "studio" ? (
+                <Lightbulb className="h-4 w-4" />
+              ) : (
+                <LightbulbOff className="h-4 w-4" />
+              )}
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setLightingMode("flat")}>
+              <LightbulbOff className="h-4 w-4" />
+              <span className="flex-1">Flat</span>
+              {lightingMode === "flat" && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLightingMode("studio")}>
+              <Lightbulb className="h-4 w-4" />
+              <span className="flex-1">Studio</span>
+              {lightingMode === "studio" && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/45">
+              HDR environments
+            </p>
+            {HDR_ENVIRONMENT_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.id}
+                onClick={() => setHdrEnvironment(option.id)}
+                title={option.hint}
+              >
+                <Sun className="h-4 w-4" />
+                <span className="flex-1">{option.label}</span>
+                {lightingMode === "hdr" && hdrEnvironment === option.id && (
+                  <Check className="h-4 w-4 text-primary" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <FeedbackButton
           variant={showShadows ? "default" : "ghost"}
           size="icon"

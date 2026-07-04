@@ -42,7 +42,7 @@ const GROUPS = [
     items: [
       ["F", "Frame model"],
       ["G", "Toggle grid"],
-      ["L", "Toggle lights"],
+      ["L", "Cycle lighting (studio / HDR / flat)"],
       ["H", "Toggle shadows"],
       ["O", "Orthographic camera"],
       ["Gauge btn", "FPS counter in status bar"],

@@ -18,7 +18,20 @@ import {
   setAllMeshPartsVisible,
   setMeshPartsVisible,
 } from "@/lib/model-edit";
-import { applyMaterialPreference, snapshotMeshMaterials } from "@/lib/model-appearance";
+import {
+  applyMaterialPreference,
+  prepareMaterialsForEnvironment,
+  snapshotMeshMaterials,
+} from "@/lib/model-appearance";
+import type { HdrEnvironmentPreset, ViewportLightingMode } from "@/lib/viewport-lighting";
+import { nextLightingMode } from "@/lib/viewport-lighting";
+import {
+  applyColorToParts,
+  applySceneMaterialToParts,
+  applyTextureMapToParts,
+  clearMaterialPreviewCache,
+  findSceneMaterialById,
+} from "@/lib/scene-materials";
 import type { MeshEditTool, MeshElementMode, MeshElementSelection } from "@/lib/mesh-edit/types";
 import { emptyMeshElementSelection } from "@/lib/mesh-edit/types";
 import {
@@ -57,13 +70,15 @@ interface ModelState {
   meshEditTool: MeshEditTool;
   meshElementSelection: MeshElementSelection | null;
   meshEditRevision: number;
+  materialRevision: number;
   knifeCutStart: THREE.Vector3 | null;
   knifePreviewEnd: THREE.Vector3 | null;
   sceneRadius: number;
   wireframe: boolean;
   showSkeleton: boolean;
   showGrid: boolean;
-  showLights: boolean;
+  lightingMode: ViewportLightingMode;
+  hdrEnvironment: HdrEnvironmentPreset;
   showShadows: boolean;
   showAxes: boolean;
   autoRotate: boolean;
@@ -110,6 +125,10 @@ interface ModelState {
   setKnifePreviewEnd: (point: THREE.Vector3 | null) => void;
   applyKnifeCut: (end: THREE.Vector3, viewNormal: THREE.Vector3) => void;
   bumpMeshEditRevision: () => void;
+  bumpMaterialRevision: () => void;
+  applyColorToSelectedParts: (options: import("@/lib/scene-materials").MaterialPaintOptions) => void;
+  applySceneMaterialToSelectedParts: (materialId: string) => void;
+  applyTextureToSelectedParts: (file: File) => Promise<void>;
   clearActiveSelection: () => void;
   selectAllActive: () => void;
   toggleSelectedMeshVisibility: () => void;
@@ -123,7 +142,9 @@ interface ModelState {
   toggleWireframe: () => void;
   toggleSkeleton: () => void;
   toggleGrid: () => void;
-  toggleLights: () => void;
+  cycleLightingMode: () => void;
+  setLightingMode: (mode: ViewportLightingMode) => void;
+  setHdrEnvironment: (preset: HdrEnvironmentPreset) => void;
   toggleShadows: () => void;
   toggleAxes: () => void;
   toggleAutoRotate: () => void;
@@ -198,13 +219,15 @@ export const useModelStore = create<ModelState>((set, get) => ({
   meshEditTool: "select",
   meshElementSelection: null,
   meshEditRevision: 0,
+  materialRevision: 0,
   knifeCutStart: null,
   knifePreviewEnd: null,
   sceneRadius: 1,
   wireframe: false,
   showSkeleton: true,
   showGrid: true,
-  showLights: true,
+  lightingMode: "hdr",
+  hdrEnvironment: "warehouse",
   showShadows: true,
   showAxes: false,
   autoRotate: false,
@@ -226,7 +249,9 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   loadModel: (data) => {
     get().engine?.dispose();
+    clearMaterialPreviewCache();
     snapshotMeshMaterials(data.object3D);
+    prepareMaterialsForEnvironment(data.object3D);
     applyMaterialPreference(data.object3D, get().showMaterials);
     const meshParts = collectMeshParts(data.object3D);
     const boneMap = buildBoneMap(data.skeletonGroups);
@@ -251,6 +276,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
       meshEditTool: "select",
       meshElementSelection: null,
       meshEditRevision: 0,
+      materialRevision: 0,
       knifeCutStart: null,
       knifePreviewEnd: null,
       sceneRadius,
@@ -262,6 +288,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   clearModel: () => {
     get().engine?.dispose();
+    clearMaterialPreviewCache();
     set({
       model: null,
       engine: null,
@@ -279,6 +306,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
       meshEditTool: "select",
       meshElementSelection: null,
       meshEditRevision: 0,
+      materialRevision: 0,
       knifeCutStart: null,
       knifePreviewEnd: null,
       isLoading: false,
@@ -532,6 +560,40 @@ export const useModelStore = create<ModelState>((set, get) => ({
 
   bumpMeshEditRevision: () => set((s) => ({ meshEditRevision: s.meshEditRevision + 1 })),
 
+  bumpMaterialRevision: () => set((s) => ({ materialRevision: s.materialRevision + 1 })),
+
+  applyColorToSelectedParts: (options) => {
+    const { model, meshParts, selectedMeshUuids, showMaterials } = get();
+    if (!model) return;
+    const parts = meshParts.filter((p) => selectedMeshUuids.includes(p.id));
+    if (parts.length === 0) return;
+    if (!showMaterials) get().setShowMaterials(true);
+    applyColorToParts(parts, options);
+    get().bumpMaterialRevision();
+  },
+
+  applySceneMaterialToSelectedParts: (materialId) => {
+    const { model, meshParts, selectedMeshUuids, showMaterials } = get();
+    if (!model) return;
+    const source = findSceneMaterialById(model.object3D, materialId);
+    if (!source) return;
+    const parts = meshParts.filter((p) => selectedMeshUuids.includes(p.id));
+    if (parts.length === 0) return;
+    if (!showMaterials) get().setShowMaterials(true);
+    applySceneMaterialToParts(parts, source);
+    get().bumpMaterialRevision();
+  },
+
+  applyTextureToSelectedParts: async (file) => {
+    const { model, meshParts, selectedMeshUuids, showMaterials } = get();
+    if (!model) return;
+    const parts = meshParts.filter((p) => selectedMeshUuids.includes(p.id));
+    if (parts.length === 0) return;
+    if (!showMaterials) get().setShowMaterials(true);
+    await applyTextureMapToParts(parts, file);
+    get().bumpMaterialRevision();
+  },
+
   clearActiveSelection: () => {
     const { viewportSelectionTarget } = get();
     if (viewportSelectionTarget === "parts") {
@@ -635,7 +697,9 @@ export const useModelStore = create<ModelState>((set, get) => ({
   toggleWireframe: () => set((s) => ({ wireframe: !s.wireframe })),
   toggleSkeleton: () => set((s) => ({ showSkeleton: !s.showSkeleton })),
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
-  toggleLights: () => set((s) => ({ showLights: !s.showLights })),
+  cycleLightingMode: () => set((s) => ({ lightingMode: nextLightingMode(s.lightingMode) })),
+  setLightingMode: (mode) => set({ lightingMode: mode }),
+  setHdrEnvironment: (preset) => set({ hdrEnvironment: preset, lightingMode: "hdr" }),
   toggleShadows: () => set((s) => ({ showShadows: !s.showShadows })),
   toggleAxes: () => set((s) => ({ showAxes: !s.showAxes })),
   toggleAutoRotate: () => set((s) => ({ autoRotate: !s.autoRotate })),

@@ -1,15 +1,17 @@
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Clapperboard, Move3d } from "lucide-react";
+import { Clapperboard, Move3d, Paintbrush } from "lucide-react";
 import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { TransformInspector } from "@/components/panels/TransformInspector";
 import { AnimationLibraryPanel } from "@/components/panels/AnimationLibraryPanel";
+import { TexturesPanel } from "@/components/panels/TexturesPanel";
 
-type PropertiesTab = "transform" | "library";
+type PropertiesTab = "transform" | "textures" | "library";
 
 const PROPERTIES_TABS: { id: PropertiesTab; label: string; icon: LucideIcon }[] = [
   { id: "transform", label: "Transform", icon: Move3d },
+  { id: "textures", label: "Textures", icon: Paintbrush },
   { id: "library", label: "Animations", icon: Clapperboard },
 ];
 
@@ -45,10 +47,12 @@ export function PropertiesPanel() {
       <div
         className={cn(
           "min-h-0 flex-1 overflow-x-hidden",
-          tab === "transform" ? "custom-scrollbar overflow-y-auto" : "overflow-hidden"
+          tab === "library" ? "overflow-hidden" : "custom-scrollbar overflow-y-auto"
         )}
       >
-        {tab === "transform" ? <TransformInspector embedded /> : <AnimationLibraryPanel embedded />}
+        {tab === "transform" && <TransformInspector embedded />}
+        {tab === "textures" && <TexturesPanel embedded />}
+        {tab === "library" && <AnimationLibraryPanel embedded />}
       </div>
     </Panel>
   );
