@@ -1,19 +1,19 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="App Logo" width="128" />
+<img src="public/favicon.svg" alt="Animator Logo" width="128" />
 
-# Vite · Express · Tauri Template (DevKit)
+# Animator — 3D Model Animation Studio
 
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
 <a href="https://tauri.app/"><img src="https://img.shields.io/badge/Tauri-2.x-blue.svg" alt="Tauri" /></a>
 <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-19-blue.svg" alt="React" /></a>
 <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript" /></a>
 <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-7-blue.svg" alt="Vite" /></a>
-<a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Express-5-green.svg" alt="Express" /></a>
+<a href="https://threejs.org/"><img src="https://img.shields.io/badge/Three.js-0.185-black.svg" alt="Three.js" /></a>
 
-**A full-stack template: React + Vite frontend, Express API server, and Tauri desktop/mobile apps — with GitHub Actions for multi-platform builds and releases.**
+**A powerful cross-platform 3D model animation studio — import rigged models, inspect bone hierarchies, hand-author keyframe animations, apply premade humanoid clips, and export polished GLB files. Built with React, Tauri, and Rust, with GitHub Actions for multi-platform builds and releases.**
 
-[Features](#-features) • [Installation](#-installation) • [Running & Building](#-running-the-application) • [GitHub Actions](#-github-actions-build--release) • [Icons](#-icons-generation) • [Contributing](#-contributing)
+[Features](#-features) • [Installation](#-installation) • [Usage Guide](#-usage-guide) • [Running & Building](#-running-the-application) • [GitHub Actions](#-github-actions-build--release) • [Icons](#-icons-generation) • [Contributing](#-contributing)
 
 ---
 
@@ -27,6 +27,7 @@
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Running the Application](#-running-the-application)
+- [Usage Guide](#-usage-guide)
 - [Building for Production](#-building-for-production)
 - [GitHub Actions (Build & Release)](#-github-actions-build--release)
 - [Icons Generation](#-icons-generation)
@@ -41,74 +42,128 @@
 
 ## 🌟 About
 
-**Animator** is a client-side 3D model animation studio built on the Roboticela DevKit stack. Import rigged models (GLB, GLTF, FBX, OBJ), inspect armatures and bones, preview embedded clips, apply procedural premade humanoid animations, hand-author custom keyframe clips with a bone gizmo + timeline, and export the result as a new **`.glb`** file — in the browser or inside the Tauri desktop shell.
+**Animator** is a powerful cross-platform 3D model animation studio that makes rigging, inspecting, and animating 3D models accessible to everyone. Designed for game developers, artists, educators, and hobbyists alike, it delivers a professional-grade animation workflow directly in the browser or as a native desktop application.
 
-### Animator at a glance
+Built with modern technologies including **Tauri**, **React**, **React Three Fiber**, **Three.js**, **TypeScript**, and **Rust**, Animator brings 3D model animation to life through real-time skeletal rendering, interactive bone gizmos, a keyframe timeline, and a rich premade animation library.
 
-| Capability | Details |
-|------------|---------|
-| **Import** | Drag-and-drop or file picker; native open dialog on desktop (Tauri) |
-| **Inspection** | Armature/bone tree, mesh stats, per-bone transform readout |
-| **Embedded clips** | Plays animations baked into the imported file |
-| **Premade clips** | Procedural idle, walk, run, wave, jump, spin, dance (bone-name heuristics) |
-| **Custom authoring** | Move/rotate/scale gizmo, per-bone keyframes, timeline scrub/play, undo/redo |
-| **Export** | GLB only (native Save dialog on desktop; download in browser) |
-| **Try without a file** | Built-in procedural sample humanoid rig |
+Whether you're polishing a game character, testing a rigged model, creating animated assets for the web, or just exploring 3D animation for the first time, Animator offers a complete workflow from import to export — all running locally on your machine.
 
-**Keyboard shortcuts:** `W` / `E` / `R` — gizmo mode · `Space` — play/pause · `Esc` — deselect bone · `Ctrl+Z` / `Ctrl+Y` — undo/redo
+The application runs as a native desktop application through **Tauri 2** on Linux, Windows, and macOS, and also works entirely in the browser without installation. It includes automated multi-platform build pipelines, release workflows, and asset generation tools.
 
-**Known limitations:** FBX import is best-effort (three-stdlib). Export is always `.glb`. Premade animations match common humanoid bone naming (Mixamo/Unity/VRM style); unusual rigs may animate partially.
+### Why Animator?
 
----
-
-**Vite-Express-Tauri-Template-DevKit** (Roboticela DevKit) is the underlying production-ready starter for building cross-platform applications with a **React + TypeScript** frontend (Vite), an **Express** backend API, and **Tauri 2** for desktop (Linux, Windows, macOS) and mobile (Android; iOS coming soon). It includes a **GitHub Actions** workflow for building and releasing installers and packages across platforms, plus scripts for **icon generation** (desktop, Android, web).
-
-### Why This Template?
-
-- ✅ **Full-Stack** — Frontend (Vite + React), API (Express), and native shells (Tauri)
-- ✅ **Cross-Platform** — Linux, Windows, macOS (desktop); Android (and iOS planned)
-- ✅ **CI/CD Ready** — One workflow to build .deb, .rpm, .AppImage, .exe, .msi, .apk, .aab
-- ✅ **Icon Pipeline** — Single SVG → desktop, Android adaptive, and web favicons
-- ✅ **Version Patching** — Workflow patches version in `package.json`, `Cargo.toml`, `tauri.conf.json`, and server
-- ✅ **Android Signing** — Optional secrets for release signing or auto-generated keystore for testing
+- ✅ **Free and Open Source** — Licensed under MIT
+- ✅ **Cross-Platform** — Works on Linux, Windows, and macOS, plus in any modern browser
+- ✅ **Fast & Lightweight** — Built with Rust and Tauri for excellent native performance
+- ✅ **Multiple Format Support** — Import GLB, GLTF, FBX, and OBJ models
+- ✅ **Full Skeletal Inspection** — Armature tree, bone hierarchy, and per-bone transform readout
+- ✅ **Embedded Clip Playback** — Plays animations baked into imported files automatically
+- ✅ **Premade Animation Library** — Idle, walk, run, wave, jump, spin, dance, and more
+- ✅ **Custom Keyframe Authoring** — Move / rotate / scale gizmo with per-bone keyframes
+- ✅ **Timeline Editor** — Scrub, play, set in/out points, undo/redo support
+- ✅ **GLB Export** — Native Save dialog on desktop; browser download on web
+- ✅ **HTML to 3D** — Convert HTML content into 3D scene elements
+- ✅ **Texture Management** — Per-material texture maps with live preview
+- ✅ **Privacy First** — Everything stays local; no external servers required
+- ✅ **No Installation Needed** — Runs in the browser without setup
+- ✅ **Active Development** — Regular improvements and feature additions
 
 ---
 
 ## ✨ Features
 
-### 🖥️ Desktop & Web
-- **Vite 7** — Fast HMR and optimized production builds
-- **React 19** + **TypeScript** — Type-safe UI
-- **Tauri 2** — Small binaries, system WebView
-- **TailwindCSS 4** — Utility-first styling
+### 🗂️ Model Import
 
-### 🔧 Backend
-- **Express 5** — REST API server in `server/` (TypeScript, ts-node-dev for dev)
-- Separate `server/package.json` and build scripts: `server:dev`, `server:build`, `server:start`
+- Drag-and-drop or file picker import
+- Native open dialog on desktop (Tauri)
+- Support for **GLB**, **GLTF**, **FBX**, and **OBJ** formats
+- Built-in procedural sample humanoid rig — try without uploading a file
+- Automatic scene centering and camera fit on import
 
-### 📦 Build & Release
-- **GitHub Actions** — Manual workflow with inputs: version, prerelease, draft, and per-platform toggles (Linux, Windows, Android; macOS/iOS placeholders)
-- **Multi-arch** — Linux: x86_64, aarch64, armv7; Windows: x86_64, i686, aarch64; Android: all ABIs + AAB
-- **Checksums** — SHA256 and SHA512 for release assets
-- **Android** — APK (split per ABI) and AAB; optional keystore secrets for signing
+### 🦴 Skeletal Inspection
 
-### 🎨 Icons
-- **Single source** — `public/favicon.svg` (or custom path)
-- **Tauri icon** — Desktop and Windows Store assets
-- **Android** — Adaptive icon with configurable background color and icon scale
-- **Web** — Favicons and apple-touch-icon copied to `public/`
+- Full armature / bone tree panel with expand and collapse
+- Per-bone transform readout (position, rotation, scale)
+- Bone selection highlighting in the 3D viewport
+- Mesh stats and model hierarchy overview
+- Material and texture inspection per mesh
+
+### 🎬 Animation Playback
+
+- Plays **embedded clips** baked into the imported file
+- Animated clip list with thumbnail previews
+- Virtual scrolling animation grid for large libraries
+- Transport controls: play, pause, stop, loop
+
+### 🤸 Premade Animation Library
+
+- Procedural humanoid animations using bone-name heuristics
+- Built-in clips: **idle**, **walk**, **run**, **wave**, **jump**, **spin**, **dance**, and more
+- Works with Mixamo, Unity, and VRM naming conventions
+- Partial matching for unusual rigs
+
+### ✏️ Custom Keyframe Authoring
+
+- **Bone gizmo** — move (`W`), rotate (`E`), and scale (`R`) modes
+- Per-bone keyframe recording on the timeline
+- Timeline scrub, play/pause, and in/out point controls
+- Full **undo / redo** (`Ctrl+Z` / `Ctrl+Y`)
+- `Space` to play/pause · `Esc` to deselect bone
+
+### 🎨 Texture & Material Management
+
+- Per-material texture maps panel: albedo, normal, roughness, metalness, emissive, AO
+- Drag-and-drop texture file loading
+- Texture folder batch import with auto-mapping prompt
+- Live material preview in the viewport
+
+### 🌐 HTML to 3D
+
+- Convert HTML content into 3D scene elements
+- Dedicated panel and modal workflow
+- Seamlessly integrates web content into your 3D scene
+
+### 📤 Export
+
+- **GLB** export (always GLB for maximum compatibility)
+- Native Save dialog on desktop (Tauri)
+- Browser download on web
+- Bakes custom keyframe animations into the exported file
+
+### 🖥️ Viewport & Scene
+
+- React Three Fiber 3D viewport with orbit controls
+- Reference image import and overlay for tracing
+- Scene lighting controls (ambient, directional, environment)
+- Bone skeleton overlay on top of the mesh
+- Gizmo controller with axis snapping
+
+### 🏗️ Build & Release
+
+- Automated GitHub Actions workflows
+- Multi-platform build support (Linux, Windows, macOS, Android)
+- Multi-architecture releases
+- Asset checksum generation
+
+### 🎨 Icon System
+
+- Single-source SVG icon generation
+- Desktop icons
+- Android adaptive icons
+- Web favicons and application assets
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer        | Technology |
-|-------------|------------|
-| Frontend    | React 19, TypeScript 5.x, Vite 7, TailwindCSS 4 |
-| 3D / Animator | three.js, React Three Fiber, drei, zustand |
-| Backend     | Express 5 (Node.js) — optional; Animator is fully client-side |
-| Desktop/Mobile | Tauri 2, Rust |
-| Tooling     | ESLint, npm |
+| Layer           | Technology |
+|----------------|------------|
+| Frontend        | [React 19](https://reactjs.org/), [TypeScript 5.x](https://www.typescriptlang.org/), [Vite 7](https://vitejs.dev/), [TailwindCSS 4](https://tailwindcss.com/), [Framer Motion 12](https://www.framer.com/motion/), [Lucide React](https://lucide.dev/) |
+| 3D / Animation  | [Three.js](https://threejs.org/), [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/), [@react-three/drei](https://github.com/pmndrs/drei), [three-stdlib](https://github.com/pmndrs/three-stdlib) |
+| State Management | [Zustand](https://github.com/pmndrs/zustand) |
+| UI Components   | [Radix UI](https://www.radix-ui.com/) (Dialog, Dropdown, Slider, Tabs), [react-colorful](https://github.com/omgovich/react-colorful) |
+| Desktop/Mobile  | [Tauri 2](https://tauri.app/), [Rust](https://www.rust-lang.org/) |
+| Tooling         | ESLint, npm, [vite-plugin-sitemap](https://github.com/jbaubree/vite-plugin-sitemap) |
 
 ---
 
@@ -140,21 +195,21 @@ xcode-select --install
 
 #### Windows
 - [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-- [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually on Windows 10/11)
+- [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually pre-installed on Windows 10/11)
 
 #### Android (local)
 - JDK 17, Android SDK, NDK (e.g. 27.0.12077973 as in workflow)
 - `npx tauri android init` once; see [Tauri Android](https://v2.tauri.app/develop/android/)
-- **Windows only:** enable [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) (Settings → System → For developers). Tauri links `libapp_lib.so` into `src-tauri/gen/android/.../jniLibs` with a **symbolic link**; without Developer Mode (or the “create symbolic links” privilege) the build fails with *“Creation symbolic link is not allowed for this system”* ([upstream discussion](https://github.com/tauri-apps/tauri/issues/10937)). Keep the project on an **NTFS** drive (not exFAT/FAT32 on external disks).
-- If Gradle/Kotlin reports *“this and base files have different roots”* (e.g. repo on **D:** and Cargo/registry on **C:**), the Kotlin daemon may fall back; builds can still succeed. If problems persist, put the **project on the same drive** as your user profile (where `.cargo` lives) or add `kotlin.incremental=false` in `src-tauri/gen/android/gradle.properties` after `tauri android init` (re-apply if you regenerate `gen/android`).
+- **Windows only:** enable [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) (Settings → System → For developers). Tauri links `libapp_lib.so` into `src-tauri/gen/android/.../jniLibs` with a **symbolic link**; without Developer Mode the build fails with *"Creation symbolic link is not allowed for this system"* ([upstream discussion](https://github.com/tauri-apps/tauri/issues/10937)). Keep the project on an **NTFS** drive (not exFAT/FAT32).
+- If Gradle/Kotlin reports *"this and base files have different roots"* (e.g. repo on **D:** and Cargo/registry on **C:**), builds can still succeed. If problems persist, put the **project on the same drive** as your user profile (where `.cargo` lives) or add `kotlin.incremental=false` in `src-tauri/gen/android/gradle.properties` after `tauri android init`.
 
 ---
 
 ## 📥 Installation
 
 ```bash
-git clone https://github.com/Roboticela/Vite-Express-Tauri-Template-DevKit.git
-cd Vite-Express-Tauri-Template-DevKit
+git clone https://github.com/Roboticela/animator.git
+cd animator
 npm install
 ```
 
@@ -175,65 +230,103 @@ Then open http://localhost:5173.
 
 ### Desktop (Tauri + Vite dev server)
 ```bash
-npm run tauri dev
+npm run dev:desktop
 ```
 Starts Vite and opens the Tauri window with hot-reload.
 
-### Backend API only
-```bash
-npm run server:dev
-```
-Runs Express from `server/` with ts-node-dev (default port as in `server`).
+---
 
-### Web + backend together
-Run in two terminals:
-```bash
-npm run dev
-npm run server:dev
-```
+## 🎮 Usage Guide
+
+### Getting Started
+
+1. **Launch the Application** — Open the built application or run in dev mode
+2. **Import a Model** — Drag and drop a GLB, GLTF, FBX, or OBJ file onto the import screen, or click to browse
+3. **Try Without a File** — Click "Load Sample" to load the built-in procedural humanoid rig
+4. **Explore the Workspace** — The main workspace has four areas: Viewport, Bone Tree, Properties / Timeline, and the Animation Library
+
+### Using the Viewport
+
+1. **Orbit** — Left-click + drag to rotate the camera around the model
+2. **Pan** — Middle-click + drag (or right-click + drag) to pan
+3. **Zoom** — Scroll wheel to zoom in/out
+4. **Reset Camera** — Use the viewport toolbar to fit the model to view
+
+### Working with Bones
+
+1. **Select a Bone** — Click a bone name in the Bone Tree panel or click a bone in the skeleton overlay
+2. **Switch Gizmo Mode** — Press `W` (move), `E` (rotate), or `R` (scale)
+3. **Transform a Bone** — Drag the gizmo handles to move/rotate/scale the selected bone
+4. **Deselect** — Press `Esc` to deselect the current bone
+
+### Animating
+
+1. **Record a Keyframe** — With a bone selected and the timeline open, transform the bone and insert a keyframe at the current frame
+2. **Scrub the Timeline** — Drag the playhead to any frame to preview the pose
+3. **Play/Pause** — Press `Space` or click the play button in the timeline toolbar
+4. **Set In/Out Points** — Use the timeline toolbar to define a play range
+5. **Undo/Redo** — Press `Ctrl+Z` / `Ctrl+Y` at any time
+
+### Using Premade Animations
+
+1. **Open the Animation Library** — Click "Animations" in the header or panel
+2. **Browse Clips** — Scroll through the virtual grid of thumbnail previews
+3. **Apply a Clip** — Click a premade animation card to apply it to the current model
+4. **Mix & Edit** — After applying, switch to the timeline to fine-tune keyframes
+
+### Exporting
+
+1. **Click Export** — Open the Export modal from the header
+2. **Choose Settings** — Confirm the output file name
+3. **Save** — Desktop: native Save dialog opens. Web: file downloads automatically
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `W` | Move gizmo mode |
+| `E` | Rotate gizmo mode |
+| `R` | Scale gizmo mode |
+| `Space` | Play / Pause animation |
+| `Esc` | Deselect bone |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
 
 ---
 
 ## 📦 Building for Production
 
-### Frontend
+### Frontend (web)
 ```bash
-npm run build
+npm run build:web
 ```
 Output: `dist/`.
 
-### Backend
-```bash
-npm run server:build
-npm run server:start
-```
-Output: `server/dist/`.
-
 ### Desktop (current platform)
 ```bash
-npm run build
-npm run tauri build
-```
-Or:
-```bash
-npm run build && npm run tauri:build
+npm run build:desktop
 ```
 Output:
-- **Linux:** `src-tauri/target/<target>/release/bundle/` (deb, rpm, AppImage)
-- **Windows:** `src-tauri/target/<target>/release/bundle/` (nsis .exe, msi)
-- **macOS:** `src-tauri/target/<target>/release/bundle/` (dmg, app)
+- **Linux:** `src-tauri/target/<target>/release/bundle/` (.deb, .rpm, .AppImage)
+- **Windows:** `src-tauri/target/<target>/release/bundle/` (.exe NSIS, .msi)
+- **macOS:** `src-tauri/target/<target>/release/bundle/` (.dmg, .app)
 
 ### Desktop for a specific target (cross-compile)
-Examples:
 ```bash
 # Linux x86_64 (default on Linux)
-npm run tauri:build -- --target x86_64-unknown-linux-gnu
+npm run build:linux
 
 # Linux ARM64
-npm run tauri:build -- --target aarch64-unknown-linux-gnu
+npm run build:linux:arm64
 
-# Windows (from Linux/macOS with cross-compile setup)
-npm run tauri:build -- --target x86_64-pc-windows-msvc
+# Windows
+npm run build:win
+
+# macOS ARM64
+npm run build:mac:arm64
+
+# macOS Intel
+npm run build:mac:intel
 ```
 Rust targets must be installed (e.g. `rustup target add <target>`).
 
@@ -251,11 +344,11 @@ Set `NDK_HOME` if needed (e.g. `$ANDROID_HOME/ndk/<version>`).
 ### Build summary by platform
 
 | Platform  | Command / note |
-|-----------|-----------------|
-| Web       | `npm run build` → `dist/` |
-| Linux     | `npm run tauri:build` (or `--target x86_64-unknown-linux-gnu` etc.) |
-| Windows   | `npm run tauri:build` on Windows (or cross-compile with MSVC target) |
-| macOS     | `npm run tauri:build` on macOS |
+|-----------|----------------|
+| Web       | `npm run build:web` → `dist/` |
+| Linux     | `npm run build:linux` (or `build:linux:arm64`) |
+| Windows   | `npm run build:win` on Windows |
+| macOS     | `npm run build:mac:arm64` or `build:mac:intel` on macOS |
 | Android   | `npx tauri android build --apk` or `--aab` (after `tauri android init`) |
 
 ---
@@ -264,14 +357,14 @@ Set `NDK_HOME` if needed (e.g. `$ANDROID_HOME/ndk/<version>`).
 
 The workflow file is **`.github/workflows/build-release.yml`**. It is triggered **manually** (workflow_dispatch) and:
 
-1. **Prepares** — Patches version in `package.json`, `server/package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`
+1. **Prepares** — Patches version in `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`
 2. **Builds** — Linux, Windows, and Android (each can be toggled on/off)
 3. **Releases** — Creates a GitHub Release with artifacts and SHA256/SHA512 checksums
 
 ### Workflow inputs (manual trigger)
 
 | Input | Type | Default | Description |
-|-------|------|--------|-------------|
+|-------|------|---------|-------------|
 | `version` | string | `"0.1.0"` | Release version (e.g. `1.0.0`) |
 | `prerelease` | boolean | `false` | Mark release as pre-release |
 | `draft` | boolean | `false` | Create as draft release |
@@ -283,11 +376,9 @@ The workflow file is **`.github/workflows/build-release.yml`**. It is triggered 
 
 ### Environment variables (workflow)
 
-Set at the top level of the workflow:
-
 | Variable | Example | Description |
 |----------|---------|-------------|
-| `APP_NAME` | `"Roboticela DevKit"` | Display name used in release title and Android signing DN |
+| `APP_NAME` | `"Roboticela Animator"` | Display name used in release title and Android signing DN |
 | `NDK_VERSION` | `"27.0.12077973"` | Android NDK version installed via `sdkmanager` |
 | `NODE_VERSION` | `"24"` | Node version for `actions/setup-node` |
 
@@ -297,17 +388,17 @@ If you want **release signing** for Android (e.g. for Play Store), add these rep
 
 | Secret | Description |
 |--------|-------------|
-| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.keystore` file (contents of the keystore binary) |
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.keystore` file |
 | `ANDROID_KEY_ALIAS` | Key alias inside the keystore |
 | `ANDROID_KEY_PASSWORD` | Private key password |
 | `ANDROID_STORE_PASSWORD` | Keystore password |
 
-If **none** of these are set, the workflow generates a **self-signed keystore** and uses it for the build (suitable for testing, not for Play Store distribution).
+If **none** of these are set, the workflow generates a **self-signed keystore** for the build (suitable for testing, not for Play Store distribution).
 
 ### Built artifacts
 
 | Platform | Architectures | Formats |
-|----------|----------------|--------|
+|----------|---------------|---------|
 | Linux | x86_64, aarch64, armv7 | .deb, .rpm, .AppImage |
 | Windows | x86_64, i686, aarch64 | .exe (NSIS), .msi |
 | Android | arm64-v8a, armeabi-v7a, x86, x86_64 | .apk (per ABI), .aab |
@@ -347,24 +438,22 @@ node scripts/icons-generate.js path/to/icon.svg
 
 ### What it does
 
-1. **Prompts (interactive)**  
-   - **Android launcher background color** — Hex color (e.g. `#ffffff`). Previous value is read from `src-tauri/icons/android/values/ic_launcher_background.xml` and used as default.  
+1. **Prompts (interactive)**
+   - **Android launcher background color** — Hex color (e.g. `#0f172a`). Previous value is read from `src-tauri/icons/android/values/ic_launcher_background.xml` and used as default.
    - **Android icon scale** — Icon size as percentage of canvas (e.g. `50` = 50%). Stored in `src-tauri/icons/android/icon-options.json` and reused as default next time.
 
-2. **Standard Tauri icons**  
+2. **Standard Tauri icons**
    Runs `tauri icon "<inputPath>"` to generate desktop icons (e.g. 32x32, 128x128, icon.ico, icon.icns) in `src-tauri/icons/`.
 
-3. **Android background color**  
-   After `tauri icon`, overwrites the Android background color in `src-tauri/icons/android/values/ic_launcher_background.xml` with the color you chose (so `tauri icon` doesn’t override it).
+3. **Android background color**
+   After `tauri icon`, overwrites the Android background color in `src-tauri/icons/android/values/ic_launcher_background.xml` with the chosen color.
 
-4. **Android mipmap icons**  
+4. **Android mipmap icons**
    Builds scaled, padded PNGs for Android adaptive icon:
    - **Launcher:** `ic_launcher.png`, `ic_launcher_round.png` (mdpi → xxxhdpi)
    - **Foreground:** `ic_launcher_foreground.png` (2.25× sizes for adaptive layer)
 
-   Padding is applied so the icon is not clipped by the adaptive icon mask; the **scale** (e.g. 50%) controls how large the logo is within the canvas.
-
-5. **Web icons**  
+5. **Web icons**
    Runs `node scripts/copy-vite-icons.js`, which copies from `src-tauri/icons/` to `public/`:
    - `32x32.png` → `public/favicon-32x32.png`
    - `128x128.png` → `public/apple-touch-icon.png`
@@ -375,7 +464,7 @@ node scripts/icons-generate.js path/to/icon.svg
 | Option | File | Description |
 |--------|------|-------------|
 | Android background color | `src-tauri/icons/android/values/ic_launcher_background.xml` | `<color name="ic_launcher_background">#rrggbb</color>` |
-| Scale (percent) | `src-tauri/icons/android/icon-options.json` | `{ "scalePercent": 50 }` — used as default for next run |
+| Scale (percent) | `src-tauri/icons/android/icon-options.json` | `{ "scalePercent": 50 }` — reused as default next run |
 
 ### Scale input format
 
@@ -386,42 +475,45 @@ When prompted for **Android icon scale**, you can enter:
 
 ### Non-interactive / CI
 
-The script is interactive by default. For CI or scripts, you would need to either:
-- Pipe answers into it (e.g. `echo -e " #ffffff\n 50" | npm run icons:generate`), or
-- Pre-create/update `icon-options.json` and `values/ic_launcher_background.xml` and adapt the script to read from env or args (not implemented in the current script).
+The script is interactive by default. For CI or scripts:
+- Pipe answers into it (e.g. `echo -e "#0f172a\n50" | npm run icons:generate`), or
+- Pre-create/update `icon-options.json` and `values/ic_launcher_background.xml` before running.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Vite-Express-Tauri-Template-DevKit/
+animator/
 ├── .github/
 │   └── workflows/
 │       └── build-release.yml    # Build & release workflow
 ├── public/
 │   └── favicon.svg              # Default icon source for icons:generate
-├── server/                      # Express API
-│   ├── src/
-│   │   └── index.ts
-│   ├── package.json
-│   └── tsconfig.json
 ├── src/                         # React frontend (Animator app)
 │   ├── App.tsx                  # Import screen → AppShell when model loaded
 │   ├── components/
-│   │   ├── import/              # ImportDropzone landing
-│   │   ├── layout/              # AppHeader, AppShell
-│   │   ├── modals/              # About, Guide, Export
-│   │   ├── panels/              # Bone tree, scene info, animation library, transform
-│   │   ├── timeline/            # Keyframe editor + transport controls
-│   │   ├── viewport/            # R3F canvas, gizmo, skeleton overlay
-│   │   └── ui/                  # Button, Panel, Modal, Tabs, NumberInput
-│   ├── contexts/                # ThemeContext (dark/light)
-│   ├── hooks/                   # useOpenModel
-│   ├── lib/                     # loaders, clip-builder, procedural anims, export, tauri
-│   ├── store/                   # modelStore, animationStore (zustand)
-│   └── types/                   # ModelData, ClipMeta, keyframe types
-├── RefDesign/                   # UI reference only (not bundled)
+│   │   ├── animation/           # AnimationPreviewCanvas, VirtualAnimationGrid
+│   │   ├── import/              # ImportDropzone landing screen
+│   │   ├── layout/              # AppHeader, AppShell, StatusBar, ResizeHandle
+│   │   ├── modals/              # About, Guide, Export, AnimationLibrary, SceneInfo,
+│   │   │                        #   Shortcuts, HtmlTo3d, TextureFolderPrompt
+│   │   ├── panels/              # BoneTree, AnimationLibrary, Properties,
+│   │   │                        #   ModelHierarchy, TextureMaps, TransformInspector,
+│   │   │                        #   HtmlTo3d
+│   │   ├── timeline/            # TimelinePanel, TimelineGrid, TimelineKeyframe,
+│   │   │                        #   TimelinePlayhead, TimelinePlayRange, TimelineToolbar,
+│   │   │                        #   TimelineTrackRow
+│   │   ├── viewport/            # Viewport3D, GizmoController, ModelRenderer,
+│   │   │                        #   SceneLighting, ViewportCamera, ViewportToolbar,
+│   │   │                        #   ReferencesRenderer, ReferenceViewportInteractor
+│   │   └── ui/                  # Button, Panel, Modal, Tabs, NumberInput, etc.
+│   ├── hooks/                   # useImportReference
+│   ├── lib/                     # app-actions, export, html-to-3d, model-appearance,
+│   │   │                        #   rcanim, scene-materials, tauri, texture-maps,
+│   │   │                        #   export-formats, export-textures, reference-import
+│   ├── store/                   # modelStore (Zustand)
+│   └── types/                   # ModelData, ClipMeta, keyframe types, reference types
 ├── src-tauri/                   # Tauri + Rust
 │   ├── src/
 │   │   ├── main.rs
@@ -432,6 +524,7 @@ Vite-Express-Tauri-Template-DevKit/
 │   │       ├── values/ic_launcher_background.xml
 │   │       ├── icon-options.json
 │   │       └── mipmap-*/        # Launcher & foreground PNGs
+│   ├── capabilities/
 │   ├── Cargo.toml
 │   ├── tauri.conf.json
 │   └── ...
@@ -451,19 +544,27 @@ Vite-Express-Tauri-Template-DevKit/
 ## ⚙️ Configuration
 
 ### Tauri
-- **`src-tauri/tauri.conf.json`** — App name, version, identifier, window size, `beforeDevCommand` / `beforeBuildCommand`, bundle targets and icon list. Change here for product name and desktop behavior.
+- **`src-tauri/tauri.conf.json`** — App name, version, identifier, window size, `beforeDevCommand` / `beforeBuildCommand`, bundle targets, and icon list. Change here for product name and desktop behavior.
 
 ### Frontend
-- **`vite.config.ts`** — Vite and React plugin; dev server port (default 5173).
-- **`index.html`** — Title and favicon links (use `npm run icons:generate` to refresh favicons in `public/`).
+- **`vite.config.ts`** — Vite plugins (React, TailwindCSS, sitemap), dev server port (default 5173), and app/API URL env vars.
+- **`index.html`** — Title, favicon links, and all SEO meta tags. Update `og:url`, `og:image`, and `canonical` to match your deployment URL.
 
-### Backend
-- **`server/`** — Port and environment in `server/src/index.ts` (or env vars as you add them).
+### SEO & Sitemap
+- **`vite-plugin-sitemap`** is configured in `vite.config.ts`. The `hostname` is set to `https://animator.roboticela.com`. Change it to match your actual deployment URL before building.
+- On `npm run build`, a `sitemap.xml` is generated in `dist/` automatically.
+- Robots meta and Open Graph tags are set in `index.html`.
+
+### Animation Clips
+- Premade animations are defined in `src/lib/rcanim.ts`. Each clip uses bone-name heuristics to drive humanoid rigs (Mixamo, Unity, VRM naming).
+- To add a new premade clip, add an entry to the clips registry in `rcanim.ts` and the animation library will pick it up automatically.
+
+### Data Storage
+The application is entirely client-side — all state lives in memory (Zustand store). No database or local storage persistence is required. Exported files are saved to disk via the browser download API or the native Tauri Save dialog.
 
 ### Version (for releases)
 The GitHub Actions workflow patches version in:
 - `package.json`
-- `server/package.json`
 - `src-tauri/tauri.conf.json`
 - `src-tauri/Cargo.toml`
 
@@ -475,7 +576,7 @@ For local releases, keep these in sync manually or run your own patch step.
 
 1. Fork the repository.
 2. Create a branch: `git checkout -b feature/your-feature` or `fix/your-fix`.
-3. Make changes; follow existing style (ESLint, TypeScript, Rust fmt/clippy).
+3. Make changes; follow existing style (ESLint, TypeScript strict mode, Rust fmt/clippy).
 4. Commit with a clear message (e.g. `Add: ...`, `Fix: ...`, `Docs: ...`).
 5. Push and open a Pull Request.
 
@@ -483,8 +584,37 @@ For local releases, keep these in sync manually or run your own patch step.
 
 ## 💬 Support
 
-- **Issues:** [GitHub Issues](https://github.com/Roboticela/Vite-Express-Tauri-Template-DevKit/issues) for bugs and feature requests.
-- **Repository:** [Roboticela/Vite-Express-Tauri-Template-DevKit](https://github.com/Roboticela/Vite-Express-Tauri-Template-DevKit).
+- **Website:** [animator.roboticela.com](https://animator.roboticela.com)
+- **Issues:** [GitHub Issues](https://github.com/Roboticela/animator/issues) for bugs and feature requests.
+- **Repository:** [Roboticela/animator](https://github.com/Roboticela/animator).
+
+When reporting a bug, please include your operating system, application version, steps to reproduce, expected vs actual behavior, screenshots (if applicable), and any browser console or error messages.
+
+### FAQ
+
+**Q: Is this application free to use?**
+A: Yes. It is completely free and open-source under the MIT license.
+
+**Q: Can I use this for commercial purposes?**
+A: Yes. The MIT license permits commercial use without restriction.
+
+**Q: Does my data get sent to any servers?**
+A: No. All model data, animations, and textures stay entirely on your device. The application works fully offline.
+
+**Q: Why does FBX import look different from the original?**
+A: FBX import is handled by `three-stdlib` and is best-effort. Complex FBX files with proprietary features may not import perfectly. GLB/GLTF is the recommended format for best results.
+
+**Q: Can I export to formats other than GLB?**
+A: Currently, export is always `.glb`. GLB is the most widely supported 3D format for web, game engines, and AR/VR applications. Additional formats may be added in future releases.
+
+**Q: My premade animations only work on some bones — why?**
+A: Premade animations use bone-name heuristics targeting Mixamo, Unity, and VRM naming conventions. If your rig uses a different naming scheme, the animations may apply partially. Renaming bones to match standard conventions resolves this.
+
+**Q: Can I use Animator as a web app without installing anything?**
+A: Yes. Run `npm run dev` and open http://localhost:5173, or build and deploy `dist/` to any static hosting service.
+
+**Q: Can I add my own premade animation clips?**
+A: Yes. Add entries to the clips registry in `src/lib/rcanim.ts`. See the [Configuration](#-configuration) section for details.
 
 ---
 
@@ -500,7 +630,7 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
    <img src="public/CompanyLogo.png" alt="Roboticela Logo" width="200" style="padding:30px;" />
 </div>
 
-**[Roboticela](https://github.com/Roboticela)** maintains this template for building cross-platform apps with Vite, Express, and Tauri. Star the repo if you find it useful.
+**[Roboticela](https://github.com/Roboticela)** builds open-source tools for developers, artists, and makers — including Animator, the 3D model animation studio built with React, Tauri, and Rust. Star the repo if you find it useful.
 
 ---
 
@@ -508,6 +638,6 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for t
 
 **Built with ❤️ by [Roboticela](https://github.com/Roboticela)**
 
-[⬆ Back to Top](#-vite--express--tauri-template-devkit)
+[⬆ Back to Top](#-animator--3d-model-animation-studio)
 
 </div>
