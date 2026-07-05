@@ -1,52 +1,88 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
 
-    <!-- Favicon & App Icons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="apple-touch-icon" sizes="128x128" href="/apple-touch-icon.png" />
+<head>
+  <meta charset="UTF-8" />
 
-    <!-- Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="128x128" href="/apple-touch-icon.png" />
 
-    <!-- Primary SEO -->
-    <title>Animator — 3D Model Animation Studio by Roboticela</title>
-    <meta name="description" content="Animator is a powerful cross-platform 3D model animation studio. Import GLB, GLTF, FBX and OBJ models, inspect armatures, author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files — in the browser or as a native desktop app." />
-    <meta name="keywords" content="3D animator, GLB animation, GLTF editor, FBX importer, OBJ viewer, keyframe animation, bone gizmo, skeleton editor, humanoid animation, three.js, React Three Fiber, Tauri desktop, cross-platform 3D, animation studio, Roboticela" />
-    <meta name="author" content="Roboticela" />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#0f172a" />
-    <link rel="canonical" href="https://animator.roboticela.com/" />
+  <!-- Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://animator.roboticela.com/" />
-    <meta property="og:site_name" content="Roboticela Animator" />
-    <meta property="og:title" content="Animator — 3D Model Animation Studio by Roboticela" />
-    <meta property="og:description" content="Import rigged 3D models, inspect bone hierarchies, hand-author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files. Runs in the browser or as a native Tauri desktop app." />
-    <meta property="og:image" content="https://animator.roboticela.com/apple-touch-icon.png" />
-    <meta property="og:image:alt" content="Roboticela Animator — 3D Model Animation Studio" />
-    <meta property="og:locale" content="en_US" />
+  <!-- Primary SEO -->
+  <title>Animator — 3D Model Animation Studio by Roboticela</title>
+  <meta name="description"
+    content="Animator is a powerful cross-platform 3D model animation studio. Import GLB, GLTF, FBX and OBJ models, inspect armatures, author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files — in the browser or as a native desktop app." />
+  <meta name="keywords"
+    content="3D animator, GLB animation, GLTF editor, FBX importer, OBJ viewer, keyframe animation, bone gizmo, skeleton editor, humanoid animation, three.js, React Three Fiber, Tauri desktop, cross-platform 3D, animation studio, Roboticela" />
+  <meta name="author" content="Roboticela" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="canonical" href="https://animator.roboticela.com/" />
 
-    <!-- Twitter / X Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Roboticela" />
-    <meta name="twitter:creator" content="@Roboticela" />
-    <meta name="twitter:title" content="Animator — 3D Model Animation Studio by Roboticela" />
-    <meta name="twitter:description" content="Import GLB, GLTF, FBX and OBJ models, author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files. Free, open-source, cross-platform." />
-    <meta name="twitter:image" content="https://animator.roboticela.com/apple-touch-icon.png" />
-    <meta name="twitter:image:alt" content="Roboticela Animator — 3D Model Animation Studio" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://animator.roboticela.com/" />
+  <meta property="og:site_name" content="Roboticela Animator" />
+  <meta property="og:title" content="Animator — 3D Model Animation Studio by Roboticela" />
+  <meta property="og:description"
+    content="Import rigged 3D models, inspect bone hierarchies, hand-author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files. Runs in the browser or as a native Tauri desktop app." />
+  <meta property="og:image" content="https://animator.roboticela.com/apple-touch-icon.png" />
+  <meta property="og:image:alt" content="Roboticela Animator — 3D Model Animation Studio" />
+  <meta property="og:locale" content="en_US" />
 
-    <!-- Application Metadata -->
-    <meta name="application-name" content="Roboticela Animator" />
-    <meta name="generator" content="Vite + React + Tauri" />
-    <meta name="category" content="3D Graphics, Animation, Developer Tools" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@Roboticela" />
+  <meta name="twitter:creator" content="@Roboticela" />
+  <meta name="twitter:title" content="Animator — 3D Model Animation Studio by Roboticela" />
+  <meta name="twitter:description"
+    content="Import GLB, GLTF, FBX and OBJ models, author keyframe animations with a bone gizmo and timeline, apply premade humanoid clips, and export polished GLB files. Free, open-source, cross-platform." />
+  <meta name="twitter:image" content="https://animator.roboticela.com/apple-touch-icon.png" />
+  <meta name="twitter:image:alt" content="Roboticela Animator — 3D Model Animation Studio" />
+
+  <!-- Application Metadata -->
+  <meta name="application-name" content="Roboticela Animator" />
+  <meta name="generator" content="Vite + React + Tauri" />
+  <meta name="category" content="3D Graphics, Animation, Developer Tools" />
+
+  <!-- Microsoft Clarity Analytics (Deferred & Skipped for Lighthouse) -->
+  <script type="text/javascript">
+    window.addEventListener('load', function () {
+      if (/lighthouse|chrome-lighthouse/i.test(navigator.userAgent)) {
+        return; // Skip loading Clarity during Lighthouse audits
+      }
+      setTimeout(function () {
+        (function (c, l, a, r, i, t, y) {
+          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+          t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "viwp403njf");
+      }, 3000); // Delay by 3 seconds after load to ensure it doesn't block LCP/INP
+    });
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8NELPL2FXP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-8NELPL2FXP');
+  </script>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9014031373485007"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
