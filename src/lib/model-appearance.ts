@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { copyMaterialTextureMetadata } from "@/lib/texture-maps";
 
 export const SAVED_MATERIALS_KEY = "_animatorSavedMaterials";
 const FLAT_PROXY_KEY = "_animatorFlatMaterials";
@@ -87,6 +88,7 @@ function convertToPhongMaterial(material: THREE.Material): THREE.MeshPhongMateri
     });
     phong.userData[ROUGHNESS_KEY] = 0.9;
     phong.userData[METALNESS_KEY] = 0;
+    copyMaterialTextureMetadata(material, phong);
     material.dispose();
     configurePhongMaterial(phong);
     return phong;
@@ -114,6 +116,7 @@ function convertToPhongMaterial(material: THREE.Material): THREE.MeshPhongMateri
     });
     phong.userData[ROUGHNESS_KEY] = roughness;
     phong.userData[METALNESS_KEY] = metalness;
+    copyMaterialTextureMetadata(material, phong);
     material.dispose();
     configurePhongMaterial(phong);
     return phong;
@@ -121,6 +124,7 @@ function convertToPhongMaterial(material: THREE.Material): THREE.MeshPhongMateri
 
   const fallback = createFlatMaterial();
   fallback.name = material.name;
+  copyMaterialTextureMetadata(material, fallback);
   material.dispose();
   return fallback;
 }

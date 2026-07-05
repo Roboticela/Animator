@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { FBXLoader, GLTFLoader, OBJLoader } from "three-stdlib";
 import { collectSkeletonGroups, computeSceneStats } from "@/lib/bone-utils";
+import { applyFbxTexturePathHints } from "@/lib/fbx-texture-paths";
 import { yieldToMain } from "@/lib/yield-main";
 import type { ModelData, SourceExtension } from "@/types/model";
 
@@ -27,6 +28,7 @@ function loadGltf(buffer: ArrayBuffer): Promise<{ scene: THREE.Group; animations
 function parseFbx(buffer: ArrayBuffer): { scene: THREE.Group; animations: THREE.AnimationClip[] } {
   const loader = new FBXLoader();
   const group = loader.parse(buffer, "");
+  applyFbxTexturePathHints(buffer, group);
   return { scene: group, animations: group.animations ?? [] };
 }
 

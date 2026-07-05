@@ -5,6 +5,7 @@ import {
   commitMeshMaterials,
   METALNESS_KEY,
   ROUGHNESS_KEY,
+  SAVED_MATERIALS_KEY,
   metalnessToSpecular,
   roughnessToShininess,
   shininessToRoughness,
@@ -363,8 +364,10 @@ export function findSceneMaterialById(root: THREE.Object3D, materialId: string):
     if (found) return;
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) {
+    const active = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const saved = mesh.userData[SAVED_MATERIALS_KEY] as THREE.Material | THREE.Material[] | undefined;
+    const savedList = saved ? (Array.isArray(saved) ? saved : [saved]) : [];
+    for (const material of [...active, ...savedList]) {
       if (material?.uuid === materialId) {
         found = material;
         return;

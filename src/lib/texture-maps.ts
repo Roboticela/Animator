@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { findSceneMaterialById } from "@/lib/scene-materials";
-import { commitMeshMaterials } from "@/lib/model-appearance";
+import { applyMaterialPreference, commitMeshMaterials, SAVED_MATERIALS_KEY } from "@/lib/model-appearance";
 import { yieldToMain } from "@/lib/yield-main";
 import type { SourceExtension } from "@/types/model";
 
@@ -119,6 +119,21 @@ export function setStoredTexturePath(material: THREE.Material, slot: TextureSlot
   if (path) paths[slot] = path;
   else delete paths[slot];
   material.userData[TEXTURE_PATHS_KEY] = paths;
+}
+
+/** Preserve FBX/OBJ texture path hints when materials are converted to Phong. */
+export function copyMaterialTextureMetadata(
+  source: THREE.Material,
+  target: THREE.Material
+): void {
+  const paths = source.userData[TEXTURE_PATHS_KEY] as Partial<Record<TextureSlot, string>> | undefined;
+  if (paths && Object.keys(paths).length > 0) {
+    target.userData[TEXTURE_PATHS_KEY] = { ...paths };
+  }
+  const sourceMap = source.userData[SOURCE_MAP_KEY] as THREE.Texture | undefined;
+  if (sourceMap) {
+    target.userData[SOURCE_MAP_KEY] = sourceMap;
+  }
 }
 
 export function inferTexturePath(texture: THREE.Texture | null | undefined): string | null {
@@ -398,16 +413,39 @@ function replaceMaterialOnMeshes(root: THREE.Object3D, materialId: string, next:
   });
 }
 
+function materialsOnMesh(mesh: THREE.Mesh): THREE.Material[] {
+  const active = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  const saved = mesh.userData[SAVED_MATERIALS_KEY] as THREE.Material | THREE.Material[] | undefined;
+  if (!saved) return active;
+  const savedList = Array.isArray(saved) ? saved : [saved];
+  return [...active, ...savedList];
+}
+
 function materialStillInScene(root: THREE.Object3D, material: THREE.Material): boolean {
   let found = false;
   root.traverse((obj) => {
     if (found) return;
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    if (materials.includes(material)) found = true;
+    if (materialsOnMesh(mesh).includes(material)) found = true;
   });
   return found;
+}
+
+function replaceInMaterialList(
+  materials: THREE.Material[],
+  sourceMaterial: THREE.Material,
+  next: THREE.Material
+): { changed: boolean; materials: THREE.Material[] } {
+  const copy = [...materials];
+  let changed = false;
+  for (let i = 0; i < copy.length; i++) {
+    if (copy[i] === sourceMaterial) {
+      copy[i] = next;
+      changed = true;
+    }
+  }
+  return { changed, materials: copy };
 }
 
 function replaceMaterialInstanceOnMeshes(
@@ -418,16 +456,26 @@ function replaceMaterialInstanceOnMeshes(
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
-    const materials = Array.isArray(mesh.material) ? [...mesh.material] : [mesh.material];
-    let changed = false;
-    for (let i = 0; i < materials.length; i++) {
-      if (materials[i] === sourceMaterial) {
-        materials[i] = next;
-        changed = true;
-      }
+
+    const active = Array.isArray(mesh.material) ? [...mesh.material] : [mesh.material];
+    const activeResult = replaceInMaterialList(active, sourceMaterial, next);
+    if (activeResult.changed) {
+      commitMeshMaterials(mesh, activeResult.materials.length === 1 ? activeResult.materials[0]! : activeResult.materials);
+      return;
     }
-    if (changed) {
-      commitMeshMaterials(mesh, materials.length === 1 ? materials[0]! : materials);
+
+    const saved = mesh.userData[SAVED_MATERIALS_KEY] as THREE.Material | THREE.Material[] | undefined;
+    if (!saved) return;
+    const savedList = Array.isArray(saved) ? [...saved] : [saved];
+    const savedResult = replaceInMaterialList(savedList, sourceMaterial, next);
+    if (!savedResult.changed) return;
+
+    mesh.userData[SAVED_MATERIALS_KEY] =
+      savedResult.materials.length === 1 ? savedResult.materials[0]! : savedResult.materials;
+    const display = Array.isArray(mesh.material) ? [...mesh.material] : [mesh.material];
+    const displayResult = replaceInMaterialList(display, sourceMaterial, next);
+    if (displayResult.changed) {
+      mesh.material = displayResult.materials.length === 1 ? displayResult.materials[0]! : displayResult.materials;
     }
   });
 }
@@ -480,6 +528,36 @@ async function loadTextureFromFile(file: File, slot: TextureSlot): Promise<THREE
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+const SCENE_FBX_TEXTURE_PATHS_KEY = "_animatorFbxTexturePaths";
+
+function sceneFbxTexturePaths(root: THREE.Object3D): string[] {
+  const paths = root.userData[SCENE_FBX_TEXTURE_PATHS_KEY];
+  return Array.isArray(paths) ? paths.filter((path): path is string => typeof path === "string") : [];
+}
+
+function inferSlotFromFbxPath(path: string): TextureSlot {
+  const lower = path.toLowerCase();
+  if (/(base[_-]?color|diffuse|albedo|color[_-]?map)/.test(lower)) return "map";
+  if (/(normal|norm|nrm|normalmap)/.test(lower)) return "normalMap";
+  if (/(cutout|opacity|alpha|transparency|transparent)/.test(lower)) return "alphaMap";
+  if (/(refl|reflection|specular|gloss)/.test(lower)) return "specularMap";
+  if (/(bump|height|displacement)/.test(lower)) return "bumpMap";
+  if (/(emissive|emit|glow)/.test(lower)) return "emissiveMap";
+  return "map";
+}
+
+function referencePathsForSlotOnScene(
+  root: THREE.Object3D,
+  material: THREE.Material,
+  slot: TextureSlot
+): string[] {
+  const paths = new Set(referencePathsForSlot(material, slot));
+  for (const path of sceneFbxTexturePaths(root)) {
+    if (inferSlotFromFbxPath(path) === slot) paths.add(path);
+  }
+  return [...paths];
 }
 
 function referencePathsForSlot(material: THREE.Material, slot: TextureSlot): string[] {
@@ -626,8 +704,6 @@ export function modelNeedsExternalTextures(
   sourceExt: SourceExtension
 ): boolean {
   if (sourceExt === "glb") return false;
-
-  if (sourceExt === "fbx" || sourceExt === "obj") return true;
 
   const reports = auditSceneMaterials(object3D, sourceExt);
   return reports.some(
@@ -859,6 +935,8 @@ export async function autoLoadTexturesFromFolder(
   files: File[],
   onProgress?: (message: string) => void
 ): Promise<TextureFolderLoadResult> {
+  applyMaterialPreference(root, true);
+
   const imageFiles = [...files].filter(isImageFile);
   const index = indexTextureFolderFiles(imageFiles);
   const folderName = inferTextureFolderName(imageFiles);
@@ -881,7 +959,7 @@ export async function autoLoadTexturesFromFolder(
         continue;
       }
 
-      const referencePaths = referencePathsForSlot(material, slot);
+      const referencePaths = referencePathsForSlotOnScene(root, material, slot);
       let file: File | null = resolveTextureFileFromReferences(referencePaths, index);
 
       if (!file && slot === "map") {

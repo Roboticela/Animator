@@ -11,7 +11,7 @@ export function ViewportRendererSetup() {
     gl.toneMappingExposure = 1;
     gl.outputColorSpace = THREE.SRGBColorSpace;
     gl.shadowMap.enabled = true;
-    gl.shadowMap.type = THREE.PCFSoftShadowMap;
+    gl.shadowMap.type = THREE.PCFShadowMap;
   }, [gl]);
 
   return null;

@@ -41,6 +41,7 @@ import {
   clearMaterialTextureSlot as clearMaterialTextureSlotOnScene,
   fixMaterialTextureColorSpaces as fixMaterialTextureColorSpacesOnScene,
   linkTextureBetweenMaterials,
+  modelNeedsExternalTextures,
   repairSceneTextures,
   type TextureFolderLoadResult,
   type TextureSlot,
@@ -91,6 +92,7 @@ interface ModelState {
   textureFolderName: string | null;
   lastTextureFolderLoad: TextureFolderLoadResult | null;
   textureFolderLoading: boolean;
+  textureFolderLoadingMessage: string | null;
   knifeCutStart: THREE.Vector3 | null;
   knifePreviewEnd: THREE.Vector3 | null;
   sceneRadius: number;
@@ -268,6 +270,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   textureFolderName: null,
   lastTextureFolderLoad: null,
   textureFolderLoading: false,
+  textureFolderLoadingMessage: null,
   knifeCutStart: null,
   knifePreviewEnd: null,
   sceneRadius: 1,
@@ -310,6 +313,11 @@ export const useModelStore = create<ModelState>((set, get) => ({
     const engine = new AnimationEngine(data.object3D);
     const box = new THREE.Box3().setFromObject(data.object3D);
     const sceneRadius = box.isEmpty() ? 1 : Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 0.05);
+    const openTexturePrompt =
+      options?.openTexturePrompt !== undefined
+        ? options.openTexturePrompt
+        : modelNeedsExternalTextures(data.object3D, data.sourceExt);
+
     set({
       model: data,
       boneMap,
@@ -331,14 +339,24 @@ export const useModelStore = create<ModelState>((set, get) => ({
       textureFolderName: null,
       lastTextureFolderLoad: null,
       textureFolderLoading: false,
+      textureFolderLoadingMessage: null,
       knifeCutStart: null,
       knifePreviewEnd: null,
       sceneRadius,
       isLoading: false,
       loadingMessage: null,
       loadError: null,
-      textureFolderPromptOpen: Boolean(options?.openTexturePrompt),
+      textureFolderPromptOpen: false,
     });
+
+    if (openTexturePrompt) {
+      requestAnimationFrame(() => {
+        const current = get();
+        if (current.model?.object3D === data.object3D) {
+          set({ textureFolderPromptOpen: true });
+        }
+      });
+    }
   },
 
   closeTextureFolderPrompt: () => set({ textureFolderPromptOpen: false }),
@@ -372,6 +390,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
       textureFolderName: null,
       lastTextureFolderLoad: null,
       textureFolderLoading: false,
+  textureFolderLoadingMessage: null,
       knifeCutStart: null,
       knifePreviewEnd: null,
       isLoading: false,
@@ -786,7 +805,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   },
 
   loadTexturesFromFolder: async (files) => {
-    const { model, showMaterials } = get();
+    const { model } = get();
     const empty: TextureFolderLoadResult = {
       folderName: null,
       fileCount: 0,
@@ -796,12 +815,11 @@ export const useModelStore = create<ModelState>((set, get) => ({
       unmatched: [],
     };
     if (!model || files.length === 0) return empty;
-    if (!showMaterials) get().setShowMaterials(true);
-    set({ textureFolderLoading: true });
-    get().setLoading(true, "Scanning texture folder…");
+    get().setShowMaterials(true);
+    set({ textureFolderLoading: true, textureFolderLoadingMessage: "Scanning texture folder…" });
     try {
       const result = await autoLoadTexturesFromFolder(model.object3D, files, (message) => {
-        get().setLoading(true, message);
+        set({ textureFolderLoadingMessage: message });
       });
       if (result.matched > 0) {
         set((state) => ({
@@ -821,14 +839,17 @@ export const useModelStore = create<ModelState>((set, get) => ({
       get().bumpMaterialRevision();
       return result;
     } finally {
-      set({ textureFolderLoading: false });
-      get().setLoading(false);
+      set({ textureFolderLoading: false, textureFolderLoadingMessage: null });
     }
   },
 
   embedTexturesFromFolder: async (files) => {
     const result = await get().loadTexturesFromFolder(files);
-    if (result.matched > 0) {
+    const { model } = get();
+    if (
+      result.matched > 0 ||
+      (model && !modelNeedsExternalTextures(model.object3D, model.sourceExt))
+    ) {
       set({ textureFolderPromptOpen: false });
     }
     return result;

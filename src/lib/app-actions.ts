@@ -6,7 +6,6 @@ import { buildProceduralClip, getProceduralDef, type ProceduralAnimationId } fro
 import { buildClipFromData, captureBoneTransform, clipToCustomData, createEmptyCustomClip, deleteBoneKeyframe, ensureBonePoseEasing, nextClipId, setPoseEasing, setPoseEasingForBones, uniqueClipName, upsertKeyframe } from "@/lib/clip-builder";
 import type { KeyframeEasingId } from "@/lib/keyframe-easing";
 import { copyBoneTransforms, mirrorBonesOnX, pasteBoneTransforms } from "@/lib/bone-clipboard";
-import { modelNeedsExternalTextures } from "@/lib/texture-maps";
 import {
   buildHtmlTo3dMesh,
   createModelFromHtmlMesh,
@@ -33,8 +32,7 @@ function embeddedClipId() {
 
 /** Loads a parsed model into both stores and seeds the clip library with any embedded clips. */
 export function loadModelIntoApp(data: ModelData) {
-  const openTexturePrompt = modelNeedsExternalTextures(data.object3D, data.sourceExt);
-  useModelStore.getState().loadModel(data, { openTexturePrompt });
+  useModelStore.getState().loadModel(data);
 
   const embeddedMetas: ClipMeta[] = data.embeddedClips.map((clip) => ({
     id: embeddedClipId(),
