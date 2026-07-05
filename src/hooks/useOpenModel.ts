@@ -104,6 +104,14 @@ export function useOpenModel() {
     [loadBuffer, setLoadError, setLoading]
   );
 
+  const openLocalFile = useCallback(
+    (file: File) => {
+      if (isRcanimFile(file.name)) void loadProjectFile(file);
+      else void loadFile(file);
+    },
+    [loadFile, loadProjectFile]
+  );
+
   const openFile = useCallback(async () => {
     if (isLoading) return;
     if (isTauri()) {
@@ -133,14 +141,14 @@ export function useOpenModel() {
       const file = e.target.files?.[0];
       e.target.value = "";
       if (!file) return;
-      if (isRcanimFile(file.name)) void loadProjectFile(file);
-      else void loadFile(file);
+      openLocalFile(file);
     },
-    [loadFile, loadProjectFile]
+    [openLocalFile]
   );
 
   return {
     openFile,
+    openLocalFile,
     saveProject,
     loadFile,
     loadBuffer,

@@ -280,7 +280,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
   showAxes: false,
   autoRotate: false,
   showMesh: true,
-  showMaterials: true,
+  showMaterials: false,
   orthographicCamera: false,
   flatShading: false,
   doubleSided: false,

@@ -231,7 +231,7 @@ export function AppHeader() {
           </Button>
 
           <Button
-            variant="default"
+            variant="outline"
             size="sm"
             className="gap-2 whitespace-nowrap"
             onClick={() => setExportOpen(true)}
